@@ -50,6 +50,11 @@ const userSchema = new mongoose.Schema(
     googleId: {
       type: String, // for Google OAuth
     },
+
+    refreshTokens: {
+      type: [String],
+      default: []
+    }
   },
   { timestamps: true }
 );
@@ -68,11 +73,11 @@ userSchema.pre("save", async function (next) {
 });
 
 // matching the password
-userSchema.method.isPassswordCorrect = async function (password) {
+userSchema.methods.isPassswordCorrect = async function (password) {
   return await bcrypt.compare(password, this.password);
 };
 
-userSchema.method.generateAccessToken = function () {
+userSchema.methods.generateAccessToken = function () {
   return jwt.sign(
     {
       _id: this._id,
@@ -84,7 +89,7 @@ userSchema.method.generateAccessToken = function () {
   );
 };
 
-userSchema.method.generateRefreshToken = function () {
+userSchema.methods.generateRefereshToken = function () {
 
   return jwt.sign(
     {
