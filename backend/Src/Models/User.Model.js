@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+// import crypto from "crypto";
 
 const userSchema = new mongoose.Schema(
   {
@@ -30,8 +31,8 @@ const userSchema = new mongoose.Schema(
     },
 
     avatar: {
-      url: { type: String, required: true },
-      public_id: { type: String, required: true },
+      url: { type: String, default: "" },
+      public_id: { type: String, default: "" },
     },
 
     email: {
@@ -53,16 +54,15 @@ const userSchema = new mongoose.Schema(
 
     refreshTokens: {
       type: [String],
-      default: []
-    }
+      default: [],
+    },
   },
   { timestamps: true }
 );
 
+// for new or modified password
 userSchema.pre("save", async function (next) {
-  // for new or modified password
   if (!this.isModified("password")) return next();
-
   try {
     // password hashing
     this.password = await bcrypt.hash(this.password, 10);
@@ -73,10 +73,11 @@ userSchema.pre("save", async function (next) {
 });
 
 // matching the password
-userSchema.methods.isPassswordCorrect = async function (password) {
+userSchema.methods.isPasswordCorrect = async function (password) {
   return await bcrypt.compare(password, this.password);
 };
 
+// Generate Access Token
 userSchema.methods.generateAccessToken = function () {
   return jwt.sign(
     {
@@ -89,17 +90,31 @@ userSchema.methods.generateAccessToken = function () {
   );
 };
 
-userSchema.methods.generateRefereshToken = function () {
-
+// Generate Refresh Token
+userSchema.methods.generateRefreshToken = function () {
   return jwt.sign(
     {
       _id: this._id,
     },
-    process.env.REFERESH_TOKEN_SECRET,
+    process.env.REFRESH_TOKEN_SECRET,
     {
-      expiresIn: process.env.REFERESH_TOKEN_EXPIRY,
+      expiresIn: process.env.REFRESH_TOKEN_EXPIRY,
     }
   );
 };
+
+// lastActive
+userSchema.methods.updateLastActive = function () {
+  this.lastActive = Date.now();
+  return this.save();
+};
+
+// // do it later
+// // Hashing Refresh token
+// userSchema.methods.addRefreshToken = async function (token) {
+//   const hashToken = crypto.createHash("sha256").update(token).digest("hex")
+//   this.refreshTokens.push(hashToken);
+//   await this.save()
+// }
 
 export default mongoose.model("User", userSchema);

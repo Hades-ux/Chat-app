@@ -13,7 +13,7 @@ app.use(cookieParser())
 
 app.get("/", (req, res) => {
   res.status(200).json({
-    sucesses: true,
+    success: true,
     message: "Server is up and running",
   });
 });

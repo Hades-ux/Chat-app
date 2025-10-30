@@ -2,57 +2,56 @@ import fileUpload from "../Utils/cloudinary.js";
 import User from "../Models/User.Model.js";
 
 const registerUser = async (req, res) => {
- 
-    // recive user data from frontend
-    const { firstName, lastName, email, password, userName } = req.body;
+  // recive user data from frontend
+  const { firstName, lastName, email, password, userName } = req.body;
 
-    // validation
-    if (!firstName) {
-      return res
-        .status(400)
-        .json({ success: false, message: "First Name is required" });
-    }
+  // validation
+  if (!firstName) {
+    return res
+      .status(400)
+      .json({ success: false, message: "First Name is required" });
+  }
 
-    if (!lastName) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Last Name is required" });
-    }
+  if (!lastName) {
+    return res
+      .status(400)
+      .json({ success: false, message: "Last Name is required" });
+  }
 
-    if (!userName) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Username is required" });
-    }
+  if (!userName) {
+    return res
+      .status(400)
+      .json({ success: false, message: "Username is required" });
+  }
 
-    if (!email) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Email is required" });
-    }
+  if (!email) {
+    return res
+      .status(400)
+      .json({ success: false, message: "Email is required" });
+  }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Invalid email format" });
-    }
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return res
+      .status(400)
+      .json({ success: false, message: "Invalid email format" });
+  }
 
-    if (!password) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Password is required" });
-    }
+  if (!password) {
+    return res
+      .status(400)
+      .json({ success: false, message: "Password is required" });
+  }
 
-    if (password.length < 6) {
-      return res.status(400).json({
-        success: false,
-        message: "Password must be at least 6 characters",
-      });
-    }
+  if (password.length < 6) {
+    return res.status(400).json({
+      success: false,
+      message: "Password must be at least 6 characters",
+    });
+  }
 
-    // check for already exist(email and userName)
-    try{
+  // check for already exist(email and userName)
+  try {
     // check email separately
     const emailTaken = await User.findOne({ email });
     if (emailTaken) {
@@ -84,7 +83,7 @@ const registerUser = async (req, res) => {
     try {
       uploadAvtarImg = await fileUpload(avatarImg);
     } catch (error) {
-      return res.status(404).json({
+      return res.status(500).json({
         success: false,
         message: "Error during the file upload",
         error: error.message,
@@ -96,7 +95,7 @@ const registerUser = async (req, res) => {
     const user = await User.create({
       firstName,
       lastName,
-      email,
+      email: email.toLowerCase(),
       password,
       userName: userName.toLowerCase(),
       avatar: {
@@ -106,7 +105,6 @@ const registerUser = async (req, res) => {
     });
 
     // return response
-
     return res.status(201).json({
       success: true,
       message: `${userName} user has been created`,
@@ -114,10 +112,82 @@ const registerUser = async (req, res) => {
   } catch (error) {
     return res.status(400).json({
       success: false,
-      message: "Could not creat the user",
+      message: "Could not create the user",
       error: error.message,
     });
   }
 };
 
-export { registerUser };
+const loginUser = async (req, res) => {
+
+  // recive login data
+  const { email, password } = req.body;
+
+  // validate input
+  if (!email.trim())
+    return res.status(400).json({
+      success: false,
+      message: "Email field can not be empty",
+    });
+
+  if (!password.trim())
+    return res.status(400).json({
+      success: false,
+      message: "Password field can not be empty",
+    });
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return res
+      .status(400)
+      .json({ success: false, message: "Invalid email format" });
+  }
+
+  if (password.length < 6)
+    return res.status(400).json({
+      message: "password must be 6 character",
+    });
+
+  // find user
+  const isUser = await User.findOne({ email });
+  if (!isUser)
+    return res.status(404).json({
+      success: false,
+      message: "User Not Found",
+    });
+
+  // verify Password
+  const verifyPassword = await isUser.isPasswordCorrect(password);
+  if (!verifyPassword)
+    return res.status(401).json({
+      success: false,
+      message: "Invalid credentials ",
+    });
+
+  // generate token
+  const accessToken = isUser.generateAccessToken();
+  const refreshToken = isUser.generateRefreshToken();
+
+  // store refresh token
+  isUser.refreshTokens.push(refreshToken);
+  await isUser.save({ validateBeforeSave: false });
+
+  // send token to clint
+  const option = {
+    httpOnly: true,
+    secure: true,
+    sameSite: "strict",
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+  };
+
+  res.cookie("accessToken", accessToken, option);
+  res.cookie("refreshToken", refreshToken, option);
+
+  // return response
+  return res.status(200).json({
+    success: true,
+    message: "Login Successful",
+    user: { userName: isUser.userName },
+  });
+};
+export { registerUser, loginUser };

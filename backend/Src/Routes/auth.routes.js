@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { registerUser } from "../Controllers/auth.Controller.js";
+import { loginUser, registerUser } from "../Controllers/auth.Controller.js";
 import { upload } from "../Middlewares/multer.Middleware.js";
 
 const router = Router();
@@ -9,6 +9,8 @@ router.post(
   upload.fields([{ name: "avatar", maxCount: 1 }]), // Multer middleware
   registerUser
 );
+
+router.route("/login").post( loginUser)
 
 
 export default router; 
