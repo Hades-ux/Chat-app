@@ -1,9 +1,9 @@
-import { jwt } from "jsonwebtoken";
+import  jwt  from "jsonwebtoken";
 
 export const authMiddleware = (req, res, next) => {
   try {
     // get token from header
-    const token = req.header("Authorization")?.replace("Bearer ", "");
+    const token = req.cookies?.accessToken || req.header("Authorization")?.replace("Bearer ", "");
 
     if (!token) {
       return res.status(401).json({
