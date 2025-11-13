@@ -35,11 +35,11 @@ const LogIn = () => {
   }
 
   return (
-    <div className="box-border justify-center items-center h-screen w-screen flex bg-blue-200 font-serif">
+    <div className="box-border justify-center items-center h-screen w-screen flex bg-orange-50 font-serif">
       {/* form */}
       <form
         onSubmit={handleOnSumbit}
-        className="h-96 w-96 border border-gray-300 rounded-3xl bg-white shadow-2xl flex flex-col gap-4 items-center p-4"
+        className="h-96 w-96 border border-gray-200 rounded-3xl bg-white shadow-2xl flex flex-col gap-4 items-center p-4"
       >
         <h1 className="text-3xl ">Login</h1>
 
@@ -97,7 +97,7 @@ const LogIn = () => {
           <NavLink
             to="/ForgotPassword"
             className={({ isActive }) =>
-              `text-sm ${
+              `text-sm hover:text-blue-500 ${
                 isActive ? "text-blue-500" : "text-gray-600"
               }`
             }
@@ -105,16 +105,17 @@ const LogIn = () => {
             Forgot Password
           </NavLink>
 
-          <NavLink
+          <p className="text-sm text-gray-600">Don't have an account? <NavLink
             to="/registerUser"
             className={({ isActive }) =>
-              `text-sm ${
+              `text-sm hover:text-blue-500 ${
                 isActive ? "text-blue-500" : "text-gray-600"
               }`
             }
           >
-            Don't have an account? Sign Up here
-          </NavLink>
+           Sign Up here
+          </NavLink></p>
+          
         </div>
       </form>
     </div>
