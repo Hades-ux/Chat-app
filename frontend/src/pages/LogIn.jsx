@@ -1,0 +1,143 @@
+import { useState } from "react";
+import axios from "axios";
+import { toast } from "react-toastify";
+import { NavLink, useNavigate } from "react-router-dom";
+
+const LogIn = () => {
+  const API = import.meta.env.VITE_API_URL;
+  const navigate = useNavigate();
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  async function handleOnSumbit(e) {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      await axios.post(
+        `${API}/auth/login`,
+        {
+          email,
+          password,
+        },
+        { withCredentials: true }
+      );
+
+      toast.success("Login Successfull");
+      navigate("/home");
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Login failed!");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="box-border justify-center items-center h-screen w-screen flex bg-orange-50 font-serif">
+      <div className="border h-96 w-full max-w-xl rounded-3xl border-gray-200 bg-white shadow-2xl flex flex-col gap-4 items-center">
+        <h2 className="text-2xl font-semibold text-center mt-4 mb-2">Login</h2>
+
+        {/* form */}
+        <form
+          onSubmit={handleOnSumbit}
+          className="flex flex-col gap-2 items-center w-full px-4"
+        >
+          {/* Email Input */}
+          <div className=" flex flex-col gap-1 w-full ">
+            <label htmlFor="Email" className="text-xl">
+              Email
+            </label>
+            <input
+              id="Email"
+              name="Email"
+              type="email"
+              className="border border-gray-300 rounded-lg px-4 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-all duration-200 w-full"
+              placeholder="example@mail.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
+
+          {/* Password Input */}
+          <div className="flex flex-col gap-2 w-full">
+            <label
+              htmlFor="password"
+              className="text-gray-800 font-medium text-lg tracking-wide"
+            >
+              Password
+            </label>
+
+            <div
+              className={`flex items-center border border-gray-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-gray-400 transition-all duration-200`}
+            >
+              <input
+                id="password"
+                name="password"
+                className="flex-1 px-4 py-2 text-gray-700 placeholder-gray-400 bg-transparent focus:outline-none"
+                type={showPassword ? "text" : "password"}
+                placeholder="Enter your password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                minLength={6}
+              />
+
+              <button
+                type="button"
+                onClick={() => setShowPassword((prev) => !prev)}
+                className="text-sm text-gray-500 hover:text-gray-700 px-3 py-2 transition-all duration-200 cursor-pointer"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? "Hide" : "Show"}
+              </button>
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className={`w-full rounded-lg py-2 text-white transition-all duration-200 cursor-pointer ${
+              loading
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-gray-700 hover:bg-gray-800"
+            }`}
+          >
+            {loading ? "Logging in..." : "Log In"}
+          </button>
+        </form>
+
+        <div className="w-full flex flex-col gap-1 items-start px-4">
+          <NavLink
+            to="/ForgotPassword"
+            className={({ isActive }) =>
+              `text-sm hover:text-blue-500 ${
+                isActive ? "text-blue-500" : "text-gray-600"
+              }`
+            }
+          >
+            Forgot Password
+          </NavLink>
+
+          <p className="text-sm text-gray-600">
+            Don't have an account?{" "}
+            <NavLink
+              to="/registerUser"
+              className={({ isActive }) =>
+                `text-sm hover:text-blue-500 ${
+                  isActive ? "text-blue-500" : "text-gray-600"
+                }`
+              }
+            >
+              Sign Up here
+            </NavLink>
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default LogIn;

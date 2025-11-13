@@ -1,15 +1,17 @@
 import axios from "axios";
 import { useState } from "react";
 import { toast } from "react-toastify";
+import { NavLink } from "react-router-dom";
 
 const Forgotpassword = () => {
   const [email, setEmail] = useState("");
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(false);
+  
   const API = import.meta.env.VITE_API_URL;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true)
+    setLoading(true);
 
     if (!email) {
       toast.error("Please enter your email address.");
@@ -17,21 +19,16 @@ const Forgotpassword = () => {
     }
 
     try {
-      await axios.post(`${API}/auth/forgot-password`,
-        {
-          email,
-        },
-      )
+      await axios.post(`${API}/auth/forgot-password`, {
+        email,
+      });
 
-      toast.success(`Rest password link send to ${email}`)
-
+      toast.success(`Rest password link send to ${email}`);
     } catch (error) {
-      toast.error("Failed to send reset link. Please try again later.")
-      
-    }finally {
-      setLoading(false)
+      toast.error("Failed to send reset link. Please try again later.");
+    } finally {
+      setLoading(false);
     }
-
   };
 
   return (
@@ -45,7 +42,7 @@ const Forgotpassword = () => {
           password.
         </p>
 
-          <form
+        <form
           onSubmit={handleSubmit}
           className="flex flex-col gap-5 items-center w-full px-4"
         >
@@ -79,6 +76,13 @@ const Forgotpassword = () => {
             {loading ? "Sending..." : "Send Reset Link"}
           </button>
         </form>
+
+        <NavLink
+          to="/"
+          className="text-gray-600 hover:text-gray-800 font-medium transition-colors duration-200"
+        >
+          ← Back to Login
+        </NavLink>
       </div>
     </div>
   );

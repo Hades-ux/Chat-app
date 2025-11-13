@@ -1,4 +1,4 @@
-import LogIn from "./component/LogIn.page.jsx";
+import LogIn from "./pages/LogIn.jsx";
 import NotFound from "./pages/NotFound.jsx";
 import Home from "./pages/Home.jsx"
 import Register from "./pages/Register.jsx"
