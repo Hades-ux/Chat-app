@@ -72,25 +72,25 @@ const registerUser = async (req, res) => {
       });
     }
     // check of avatar image file
-    const avatarImg = req.files?.avatar?.[0]?.path;
-    if (!avatarImg) {
-      return res.status(400).json({
-        success: false,
-        message: "Avatar image is required",
-      });
-    }
+    // const avatarImg = req.files?.avatar?.[0]?.path;
+    // if (!avatarImg) {
+    //   return res.status(400).json({
+    //     success: false,
+    //     message: "Avatar image is required",
+    //   });
+    // }
 
-    // upload avtar image
-    let uploadAvtarImg;
-    try {
-      uploadAvtarImg = await fileUpload(avatarImg);
-    } catch (error) {
-      return res.status(500).json({
-        success: false,
-        message: "Error during the file upload",
-        error: error.message,
-      });
-    }
+    // // upload avtar image
+    // let uploadAvtarImg;
+    // try {
+    //   uploadAvtarImg = await fileUpload(avatarImg);
+    // } catch (error) {
+    //   return res.status(500).json({
+    //     success: false,
+    //     message: "Error during the file upload",
+    //     error: error.message,
+    //   });
+    // }
 
     // save user in DB
 
@@ -100,10 +100,10 @@ const registerUser = async (req, res) => {
       email: email.toLowerCase(),
       password,
       userName: userName.toLowerCase(),
-      avatar: {
-        url: uploadAvtarImg.secure_url,
-        public_id: uploadAvtarImg.public_id,
-      },
+      // avatar: {
+      //   url: uploadAvtarImg.secure_url,
+      //   public_id: uploadAvtarImg.public_id,
+      // },
     });
 
     // return response

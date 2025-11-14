@@ -6,7 +6,7 @@ import { NavLink } from "react-router-dom";
 const Forgotpassword = () => {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
-  
+
   const API = import.meta.env.VITE_API_URL;
 
   const handleSubmit = async (e) => {

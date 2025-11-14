@@ -77,4 +77,35 @@ const markMessageAsRead = async (req, res) => {
   }
 };
 
-export { createMessage, markMessageAsRead };
+const fetchMessage = async (req, res) => {
+  try {
+    const sender  = req.user?._id;
+    if (!sender)
+      return res.status(400).json({
+        success: false,
+        message: "user  Not exist",
+      });
+
+      const { receiver } = req.query
+      // if (!receiver)
+      // return res.status(400).json({
+      //   success: false,
+      //   message: "receiver Not exist",
+      // });
+
+      return res.status(200).json({
+        message: true,
+        user: sender,
+        user2: receiver
+      })
+
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: error.message,
+    });
+  }
+};
+
+export { createMessage, markMessageAsRead, fetchMessage };

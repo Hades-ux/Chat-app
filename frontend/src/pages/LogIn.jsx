@@ -36,7 +36,7 @@ const LogIn = () => {
 
   return (
     <div className="box-border justify-center items-center h-screen w-screen flex bg-orange-50 font-serif">
-      <div className="border h-96 w-full max-w-xl rounded-3xl border-gray-200 bg-white shadow-2xl flex flex-col gap-4 items-center">
+      <div className="border h-96 w-full max-w-md rounded-3xl border-gray-200 bg-white shadow-2xl flex flex-col gap-4 items-center">
         <h2 className="text-2xl font-semibold text-center mt-4 mb-2">Login</h2>
 
         {/* form */}
@@ -113,21 +113,21 @@ const LogIn = () => {
           <NavLink
             to="/ForgotPassword"
             className={({ isActive }) =>
-              `text-sm hover:text-blue-500 ${
-                isActive ? "text-blue-500" : "text-gray-600"
+              `text-sm hover:text-gray-800 ${
+                isActive ? "text-blue-500" : "text-gray-500"
               }`
             }
           >
             Forgot Password
           </NavLink>
 
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-gray-500">
             Don't have an account?{" "}
             <NavLink
               to="/registerUser"
               className={({ isActive }) =>
-                `text-sm hover:text-blue-500 ${
-                  isActive ? "text-blue-500" : "text-gray-600"
+                `text-sm hover:text-gray-800 ${
+                  isActive ? "text-blue-500" : "text-gray-500"
                 }`
               }
             >

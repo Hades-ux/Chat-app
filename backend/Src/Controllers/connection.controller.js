@@ -63,7 +63,7 @@ const fetchConnection = async (req, res) => {
         message: "Unauthorized",
       });
 
-    const response = await Connection.findOne({owner: req.user._id}).populate("connection", "username email avatar")
+    const response = await Connection.findOne({owner: req.user._id}).populate("connection", "firstName email avatar")
     return res.status(200).json({
       success: true,
       message: 'connection fetch successfully',

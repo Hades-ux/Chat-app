@@ -3,16 +3,25 @@ import { useEffect, useState } from "react";
 import {useNavigate } from "react-router-dom";
 
 const Home = () => {
-  const [connections, setconnection] = useState([]);
+  const [connections, setconnections] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [id, setId] = useState("")
+
+  const [sentMsg, setSentMsg] = useState("")
 
   const API = import.meta.env.VITE_API_URL;
   const navigate = useNavigate()
 
   useEffect(() => {
     const fetchUser = async () => {
-      const { data } = await axios.get(`${API}/Connections`);
-      setconnection(data);
+    try {
+      const { data } = await axios.get(`${API}/connection/fetch`,{
+        withCredentials: true,
+      });
+       setconnections(data.data);
+     } catch (error) {
+      console.error("Failed to load connections:", err);
+     }
     };
 
     fetchUser();
@@ -30,14 +39,31 @@ const Home = () => {
         navigate("/")
     }
   }
+
+  function handleClick(user) {
+    setSelectedUser(user)
+    setId(user._id)
+    console.log("Selected User ID:", user._id);
+
+    axios.get(`${API}/message/fetch`, {
+    params: { receiver: user._id },
+    withCredentials: true,
+  })
+
+  }
+
+  function handlSendMessage() {
+
+  }
+
   return (
-    <div className="min-h-screen bg-blue-200 flex font-serif">
+    <div className="min-h-screen bg-orange-50 flex font-serif">
 
       {/* side navBar */}
-      <nav className="w-15 border-r">profile</nav>
+      <nav className="w-15 border-r border-gray-400 flex justify-center">profile</nav>
 
       {/* connections container */}
-      <div className="w-4/12 border-r py-4 px-2">
+      <div className="w-4/12 border-r border-gray-400 py-4 px-2">
         <div className="flex items-center mb-4 justify-between px-4">
           <h1 className="text-3xl">Chat-app</h1>
           <span
@@ -50,11 +76,11 @@ const Home = () => {
         {connections.length > 0 ? (
           connections.map((connection) => (
             <div
-              key={connection.id}
-              onClick={() => setSelectedUser(connection)}
+              key={connection._id}
+              onClick={() => handleClick(connection)}
             >
-              <div className="bg-white border border-gray-300 rounded-lg p-4 hover:scale-105 transition transform cursor-pointer">
-                {connection.firstName}
+              <div className="bg-white border border-gray-300 rounded-lg p-4 hover:scale-102 transition transform cursor-pointer">
+                {connection.firstName.toUpperCase()}
                 <div className="text-sm text-gray-600">{connection.email}</div>
               </div>
             </div>
@@ -67,16 +93,27 @@ const Home = () => {
       </div>
 
       {/* message container */}
-      <div className="flex-1 p-6">
+      <div className="flex-1">
         {selectedUser ? (
-          <div>
-            <h2 className="text-2xl font-bold mb-2">
-              Chat with {selectedUser.firstName}
-            </h2>
-            <p className="text-gray-600 mb-4">{selectedUser.email}</p>
-            {/* You can add chat input, messages, etc. here */}
-            <div className="border-t pt-4">Chat messages...</div>
-          </div>
+          <div className="">
+               <h1 className="ml-2 text-2xl font-bold mb-2">{selectedUser.firstName.toUpperCase()}</h1> 
+
+            <div className="border-t pt-4 text-center">Chat messages...</div>
+
+            {/* message input */}
+            <div className=" flex gap-2 items-center justify-center">
+            <input 
+            type="text"
+            placeholder="Enter Message"
+            value={sentMsg}
+            onChange={(e) => setSentMsg(e.target.value)}
+            className="border border-gray-300 rounded-3xl px-4 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-all duration-200 w-11/12" />
+            <button 
+            className="bg-amber-400 p-2 rounded-4xl cursor-pointer hover:bg-amber-500 duration-300"
+            onClick={handlSendMessage}> send</button>
+            </div>
+            
+          </div> 
         ) : (
           <p className="text-gray-500 flex items-center justify-center h-[90vh]">
             Select a user to view messages and chat
