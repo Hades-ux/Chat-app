@@ -8,7 +8,7 @@ import {
 const router = Router();
 
 // creat message
-router.post("/creat", authMiddleware, createMessage);
+router.post("/create/:id", authMiddleware, createMessage);
 
 // fetch Message
 router.get("/fetch", authMiddleware, fetchMessage);

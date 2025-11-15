@@ -16,7 +16,7 @@ const LogIn = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      await axios.post(
+     const response = await axios.post(
         `${API}/auth/login`,
         {
           email,
@@ -25,7 +25,15 @@ const LogIn = () => {
         { withCredentials: true }
       );
 
+      const data = response.data;
+
       toast.success("Login Successfull");
+
+      if (data?.user?.id) {
+      localStorage.setItem("userId", data.user.id);
+      localStorage.setItem("userName", data.user.userName); // optional
+      console.log("Stored userId:", data.user.id);
+    }
       navigate("/home");
     } catch (error) {
       toast.error(error.response?.data?.message || "Login failed!");

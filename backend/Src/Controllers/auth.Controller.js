@@ -189,7 +189,7 @@ const loginUser = async (req, res) => {
   return res.status(200).json({
     success: true,
     message: "Login Successful",
-    user: { userName: isUser.userName },
+    user: { userName: isUser.userName,  id:isUser._id },
   });
 };
 
