@@ -1,25 +1,36 @@
 import axios from "axios";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { socket } from "../socket.js";
+import { toast } from "react-toastify";
 
 const Home = () => {
   const [connections, setconnections] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [messages, setMessages] = useState([]);
   const [sentMsg, setSentMsg] = useState("");
+  const [isTyping, setIsTyping] = useState(false);
+  const [myTypingTimeout, setMyTypingTimeout] = useState(null);
 
   const API = import.meta.env.VITE_API_URL;
   const navigate = useNavigate();
+  const chatWindowRef = useRef(null);
 
-  // ---------------------------
-  //  GET CURRENT USER ID (from token or API)
-  // ---------------------------
-  const myUserId = localStorage.getItem("userId"); // Change if needed
+  // SCROLL FUNCTION
+  const scrollToBottom = () => {
+    if (chatWindowRef.current) {
+      chatWindowRef.current.scrollTop = chatWindowRef.current.scrollHeight;
+    }
+  };
 
-  // ---------------------------
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  //  GET CURRENT USER ID
+  const sender = localStorage.getItem("userId");
+
   //  FETCH USER CONNECTIONS
-  // ---------------------------
   useEffect(() => {
     const fetchUser = async () => {
       try {
@@ -29,66 +40,80 @@ const Home = () => {
         setconnections(data.data);
       } catch (error) {
         console.error("Failed to load connections:", error);
+        toast.error("Failed to load connections");
       }
     };
 
     fetchUser();
   }, []);
 
-  // ---------------------------
-  //  SOCKET LISTENER (RECEIVE MESSAGE)
-  // ---------------------------
   useEffect(() => {
+    // socket connected
+    socket.on("connect", () => {
+      console.log("CLIENT CONNECTED:", socket.id);
+    });
+
+    // listen for messages
     socket.on("receiveMessage", (data) => {
-      setMessages((prev) => [...prev, data]);
+      // only add if message belongs to the current open chat
+      if (selectedUser && selectedUser._id === data.sender) {
+        setMessages((prev) => [...prev, data]);
+      }
+    });
+
+    // listen for typing indicator
+    socket.on("Typing", (data) => {
+      if (selectedUser && data.sender === selectedUser._id) {
+        setIsTyping(data.isTyping);
+      }
     });
 
     return () => {
+      socket.off("connect");
       socket.off("receiveMessage");
+      socket.off("Typing");
     };
-  }, []);
+  }, [selectedUser]);
 
-  // ---------------------------
   //  SELECT A CHAT USER
-  // ---------------------------
-  async function handleClick(user) {
-    setSelectedUser(user);
+  async function handleClick(receiver) {
+    setSelectedUser(receiver);
     setMessages([]); // reset
 
-    const roomId = [myUserId, user._id].sort().join("_");
+    const roomId = [sender, receiver._id].sort().join("_");
     socket.emit("joinRoom", roomId);
 
     // Fetch old messages
     const res = await axios.get(`${API}/message/fetch`, {
-      params: { receiver: user._id },
+      params: { receiver: receiver._id },
       withCredentials: true,
     });
 
     setMessages(res?.data?.data || []);
   }
 
-  // ---------------------------
   //  SEND MESSAGE
-  // ---------------------------
   async function handlSendMessage() {
     if (!sentMsg.trim()) return;
 
     const messageData = {
-      sender: myUserId,
+      sender: sender,
       receiver: selectedUser._id,
       message: sentMsg,
     };
 
-     console.log("Sending messageData:", messageData);  // ← DEBUG HERE
-
-  if (!messageData.sender || !messageData.receiver || !messageData.message) {
-    console.error("ERROR: Some field is missing", messageData);
-    return;
-  }
+    if (!messageData.sender || !messageData.receiver || !messageData.message) {
+      console.error("ERROR: Some field is missing", messageData);
+      toast.error("ERROR: Some field is missing", messageData);
+      return;
+    }
 
     // Send to socket
-    socket.emit("sendMessage", messageData);
-
+    socket.emit("sendMessage", {
+      sender: sender,
+      receiver: selectedUser._id,
+      message: sentMsg,
+    });
     // Add to UI instantly
     setMessages((prev) => [...prev, messageData]);
 
@@ -100,24 +125,51 @@ const Home = () => {
     setSentMsg("");
   }
 
-  // ---------------------------
+  // TYPING
+  const handleTyping = () => {
+    if (!selectedUser) return;
+
+    socket.emit("Typing", {
+      sender: sender,
+      receiver: selectedUser._id,
+      isTyping: true,
+    });
+
+    // clear previous timeout
+    if (myTypingTimeout) clearTimeout(myTypingTimeout);
+
+    // user stops typing after 500ms
+    const timeout = setTimeout(() => {
+      socket.emit("Typing", {
+        sender: sender,
+        receiver: selectedUser._id,
+        isTyping: false,
+      });
+    }, 500);
+
+    setMyTypingTimeout(timeout);
+  };
+
   //  LOGOUT
-  // ---------------------------
   async function handleLogOut() {
     const confirm = window.confirm("Do you want to log out from the chat app?");
     if (!confirm) return;
     try {
-      const res = await axios.post(`${API}/auth/logOut`);
-      console.log(res.data.message);
+      const res = await axios.post(
+        `${API}/auth/logOut`,
+        {},
+        { withCredentials: true }
+      );
+      toast.success(res.data.message);
+      navigate("/");
     } catch (error) {
       console.error("Logout failed:", error);
-    } finally {
-      navigate("/");
+      toast.error("Logout failed:");
     }
   }
 
   return (
-    <div className="min-h-screen bg-orange-50 flex font-serif overflow-hidden">
+    <div className="h-screen bg-orange-50 flex font-serif overflow-hidden">
       {/* side navBar */}
       <nav className="w-15 border-r border-gray-200 flex justify-center">
         profile
@@ -160,23 +212,30 @@ const Home = () => {
               <h1 className="text-2xl font-bold text-gray-800">
                 {selectedUser.firstName.toUpperCase()}
               </h1>
+              {isTyping && (
+                <div className="text-gray-500 text-sm px-3 py-1">typing...</div>
+              )}
             </div>
 
             {/* Chat Area */}
-            <div className="flex-1 p-4  bg-orange-50 overflow-y-auto" id="chatWindow">
+            <div
+              ref={chatWindowRef}
+              className="flex-1 p-4  bg-orange-50 overflow-y-auto"
+              id="chatWindow"
+            >
               {messages.length > 0 ? (
                 <div className="flex flex-col gap-3 ">
                   {messages.map((msg, index) => (
                     <div
                       key={index}
                       className={`flex ${
-                        msg.sender === myUserId ? "justify-end" : "justify-start"
+                        msg.sender === sender ? "justify-end" : "justify-start"
                       }`}
                     >
                       <div
                         className={`max-w-xs px-4 py-2 rounded-2xl shadow-md text-sm  
                           ${
-                            msg.sender === myUserId
+                            msg.sender === sender
                               ? "bg-amber-400 text-gray-900 rounded-br-none"
                               : "bg-white text-gray-800 border border-gray-300 rounded-bl-none"
                           }`}
@@ -187,7 +246,9 @@ const Home = () => {
                   ))}
                 </div>
               ) : (
-                <p className="text-gray-500 text-center mt-10">No messages yet</p>
+                <p className="text-gray-500 text-center mt-10">
+                  No messages yet
+                </p>
               )}
             </div>
 
@@ -197,7 +258,16 @@ const Home = () => {
                 type="text"
                 placeholder="type message..."
                 value={sentMsg}
-                onChange={(e) => setSentMsg(e.target.value)}
+                onChange={(e) => {
+                  setSentMsg(e.target.value);
+                  handleTyping();
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    handlSendMessage();
+                  }
+                }}
                 className="flex-1 border border-gray-300 bg-amber-50 rounded-3xl px-4 py-2 text-gray-700 focus:outline-none"
               />
 

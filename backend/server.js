@@ -15,54 +15,71 @@ app.use(
     credentials: true,
   })
 );
-// Creat a Http server with express
+
 const server = http.createServer(app);
 
-// socket.io
+// initialize socket.io
 const io = new Server(server, {
   cors: {
     origin: "http://localhost:5173",
     methods: ["GET", "POST"],
     credentials: true,
   },
-  transports: ["websocket", "polling"],
 });
 
-// socket.io connection
+// socket.io logic
 io.on("connection", (socket) => {
-  console.log(" User connected:", socket.id);
+  console.log(" NEW CLIENT CONNECTED:", socket.id);
+  io.emit("online", { userId, isOnline: true });
 
-  // join room
+  // join personal room for 1v1
   socket.on("joinRoom", (roomId) => {
     socket.join(roomId);
-    console.log(`User ${socket.id} joined room: ${roomId}`);
+    console.log(` ${socket.id} joined room → ${roomId}`);
   });
 
-  // send message to specific user
-  socket.on("sendMessage", ({ sender, receiver, message }) => {
-    if (!sender || !receiver || !message) return;
+  // receive and emit messages
+  socket.on("sendMessage", (data) => {
+    const { sender, receiver, message } = data;
 
-    // Create consistent room ID for 1v1 chat
+    if (!sender || !receiver || !message) return;
     const roomId = [sender, receiver].sort().join("_");
 
-    // Emit to everyone in the room (sender + receiver)
+    console.log(` EMIT TO ROOM: ${roomId}`);
+
     io.to(roomId).emit("receiveMessage", {
       sender,
-      receiver,
       message,
       timeStamp: new Date(),
     });
   });
 
+  // typing...
+  socket.on("Typing", (data) => {
+    const { sender, receiver, isTyping } = data;
+
+    if (!sender || !receiver) return;
+    const roomId = [sender, receiver].sort().join("_");
+
+    socket.to(roomId).emit("Typing",{
+      sender,
+      isTyping
+    })
+
+  })
+
+
   socket.on("disconnect", () => {
-    console.log("User disconnected:", socket.id);
+    console.log(" CLIENT DISCONNECTED:", socket.id);
+    io.emit("online", { userId, isOnline: false });
   });
 });
 
+// start server
 try {
   server.listen(PORT, () => {
     console.log(`\nServer is running at: http://localhost:${PORT}`);
   });
 } catch (error) {
-  console.log("\nError during Connetion of server", error);
+  console.log("\nError starting server:", error);
 }

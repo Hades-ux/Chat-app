@@ -29,11 +29,6 @@ const createMessage = async (req, res) => {
       });
     }
 
-     console.log("REQ.BODY:", req.body);
-    console.log("RECEIVER:", receiver);
-    console.log("SENDER:", sender);
-
-
     // Create message
     const newMessage = await Message.create({
       sender,
@@ -125,8 +120,7 @@ const fetchMessage = async (req, res) => {
         { sender: receiver, receiver: sender },
       ],
     })
-      .sort({ createdAt: 1 })
-      .limit(20); // last 20 messages
+      .sort({ createdAt: 1 });
 
    
     return res.status(200).json({

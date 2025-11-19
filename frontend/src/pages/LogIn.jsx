@@ -32,7 +32,6 @@ const LogIn = () => {
       if (data?.user?.id) {
       localStorage.setItem("userId", data.user.id);
       localStorage.setItem("userName", data.user.userName); // optional
-      console.log("Stored userId:", data.user.id);
     }
       navigate("/home");
     } catch (error) {
