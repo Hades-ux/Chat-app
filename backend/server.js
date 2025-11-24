@@ -30,7 +30,6 @@ const io = new Server(server, {
 // socket.io logic
 io.on("connection", (socket) => {
   console.log(" NEW CLIENT CONNECTED:", socket.id);
-  io.emit("online", { userId, isOnline: true });
 
   // join personal room for 1v1
   socket.on("joinRoom", (roomId) => {
@@ -71,7 +70,6 @@ io.on("connection", (socket) => {
 
   socket.on("disconnect", () => {
     console.log(" CLIENT DISCONNECTED:", socket.id);
-    io.emit("online", { userId, isOnline: false });
   });
 });
 
