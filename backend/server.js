@@ -3,11 +3,13 @@ import connectDB from "./Src/DB/dataBase.js";
 import http from "http";
 import { Server } from "socket.io";
 import cors from "cors";
+import redis from "./Src/redis.js";
 
 const PORT = process.env.PORT || 4444;
 
-// Connect database
-connectDB();
+// Connect database and redis
+await redis.connect();
+await connectDB();
 
 app.use(
   cors({
@@ -37,14 +39,13 @@ io.on("connection", (socket) => {
     console.log(` ${socket.id} joined room → ${roomId}`);
   });
 
-  // receive and emit messages
+  // send + receive messages
   socket.on("sendMessage", (data) => {
     const { sender, receiver, message } = data;
 
     if (!sender || !receiver || !message) return;
-    const roomId = [sender, receiver].sort().join("_");
 
-    console.log(` EMIT TO ROOM: ${roomId}`);
+    const roomId = [sender, receiver].sort().join("_");
 
     io.to(roomId).emit("receiveMessage", {
       sender,
@@ -58,16 +59,16 @@ io.on("connection", (socket) => {
     const { sender, receiver, isTyping } = data;
 
     if (!sender || !receiver) return;
+
     const roomId = [sender, receiver].sort().join("_");
 
-    socket.to(roomId).emit("Typing",{
+    socket.to(roomId).emit("Typing", {
       sender,
-      isTyping
-    })
+      isTyping,
+    });
+  });
 
-  })
-
-
+  // user disconnected
   socket.on("disconnect", () => {
     console.log(" CLIENT DISCONNECTED:", socket.id);
   });

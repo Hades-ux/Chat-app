@@ -16,7 +16,6 @@ const Home = () => {
   const navigate = useNavigate();
   const chatWindowRef = useRef(null);
 
-  // SCROLL FUNCTION
   const scrollToBottom = () => {
     if (chatWindowRef.current) {
       chatWindowRef.current.scrollTop = chatWindowRef.current.scrollHeight;
@@ -27,10 +26,9 @@ const Home = () => {
     scrollToBottom();
   }, [messages]);
 
-  //  GET CURRENT USER ID
   const sender = localStorage.getItem("userId");
 
-  //  FETCH USER CONNECTIONS
+  // FETCH USER CONNECTIONS
   useEffect(() => {
     const fetchUser = async () => {
       try {
@@ -48,20 +46,22 @@ const Home = () => {
   }, []);
 
   useEffect(() => {
-    // socket connected
     socket.on("connect", () => {
       console.log("CLIENT CONNECTED:", socket.id);
     });
 
-    // listen for messages
+    const sender = localStorage.getItem("userId");
+
+    socket.connect({
+      query: { sender },
+    });
+
     socket.on("receiveMessage", (data) => {
-      // only add if message belongs to the current open chat
       if (selectedUser && selectedUser._id === data.sender) {
         setMessages((prev) => [...prev, data]);
       }
     });
 
-    // listen for typing indicator
     socket.on("Typing", (data) => {
       if (selectedUser && data.sender === selectedUser._id) {
         setIsTyping(data.isTyping);
@@ -75,15 +75,14 @@ const Home = () => {
     };
   }, [selectedUser]);
 
-  //  SELECT A CHAT USER
+  // SELECT USER
   async function handleClick(receiver) {
     setSelectedUser(receiver);
-    setMessages([]); // reset
+    setMessages([]); 
 
     const roomId = [sender, receiver._id].sort().join("_");
     socket.emit("joinRoom", roomId);
 
-    // Fetch old messages
     const res = await axios.get(`${API}/message/fetch`, {
       params: { receiver: receiver._id },
       withCredentials: true,
@@ -92,7 +91,7 @@ const Home = () => {
     setMessages(res?.data?.data || []);
   }
 
-  //  SEND MESSAGE
+  // SEND MESSAGE
   async function handlSendMessage() {
     if (!sentMsg.trim()) return;
 
@@ -102,22 +101,10 @@ const Home = () => {
       message: sentMsg,
     };
 
-    if (!messageData.sender || !messageData.receiver || !messageData.message) {
-      console.error("ERROR: Some field is missing", messageData);
-      toast.error("ERROR: Some field is missing", messageData);
-      return;
-    }
+    socket.emit("sendMessage", messageData);
 
-    // Send to socket
-    socket.emit("sendMessage", {
-      sender: sender,
-      receiver: selectedUser._id,
-      message: sentMsg,
-    });
-    // Add to UI instantly
     setMessages((prev) => [...prev, messageData]);
 
-    // Save in DB
     await axios.post(`${API}/message/create/${selectedUser._id}`, messageData, {
       withCredentials: true,
     });
@@ -130,18 +117,16 @@ const Home = () => {
     if (!selectedUser) return;
 
     socket.emit("Typing", {
-      sender: sender,
+      sender,
       receiver: selectedUser._id,
       isTyping: true,
     });
 
-    // clear previous timeout
     if (myTypingTimeout) clearTimeout(myTypingTimeout);
 
-    // user stops typing after 500ms
     const timeout = setTimeout(() => {
       socket.emit("Typing", {
-        sender: sender,
+        sender,
         receiver: selectedUser._id,
         isTyping: false,
       });
@@ -150,10 +135,11 @@ const Home = () => {
     setMyTypingTimeout(timeout);
   };
 
-  //  LOGOUT
+  // LOGOUT
   async function handleLogOut() {
-    const confirm = window.confirm("Do you want to log out from the chat app?");
+    const confirm = window.confirm("Do you want to log out?");
     if (!confirm) return;
+
     try {
       const res = await axios.post(
         `${API}/auth/logOut`,
@@ -163,24 +149,21 @@ const Home = () => {
       toast.success(res.data.message);
       navigate("/");
     } catch (error) {
-      console.error("Logout failed:", error);
-      toast.error("Logout failed:");
+      toast.error("Logout failed");
     }
   }
 
   return (
     <div className="h-screen bg-orange-50 flex font-serif overflow-hidden">
-      {/* side navBar */}
       <nav className="w-15 border-r border-gray-200 flex justify-center">
         profile
       </nav>
 
-      {/* connections container */}
       <div className="w-4/12 border-r border-gray-200 py-4 px-2">
         <div className="flex items-center mb-4 justify-between px-4">
           <h1 className="text-3xl">Chat-app</h1>
           <span
-            className="material-symbols-outlined cursor-pointer text-gray-600 hover:text-black transition"
+            className="material-symbols-outlined cursor-pointer"
             onClick={handleLogOut}
           >
             more_vert
@@ -190,26 +173,24 @@ const Home = () => {
         {connections.length > 0 ? (
           connections.map((connection) => (
             <div key={connection._id} onClick={() => handleClick(connection)}>
-              <div className="bg-white border border-gray-300 rounded-lg p-4 hover:scale-102 transition transform cursor-pointer">
+              <div className="bg-white border rounded-lg p-4 cursor-pointer">
                 {connection.firstName.toUpperCase()}
-                <div className="text-sm text-gray-600">{connection.email}</div>
+                <div className="text-sm text-gray-600">{connection.message}</div>
               </div>
             </div>
           ))
         ) : (
-          <div className="text-center text-gray-500 mt-10 flex justify-center items-center h-[80vh]">
-            No connections found. Start chatting by adding some friends!
+          <div className="text-center text-gray-500 mt-10">
+            No connections found.
           </div>
         )}
       </div>
 
-      {/* message container */}
       <div className="flex-1 flex flex-col bg-white rounded-xl shadow-sm">
         {selectedUser ? (
           <>
-            {/* Header */}
-            <div className="p-4 border-b bg-orange-100 border-gray-200">
-              <h1 className="text-2xl font-bold text-gray-800">
+            <div className="p-4 border-b bg-orange-100">
+              <h1 className="text-2xl font-bold">
                 {selectedUser.firstName.toUpperCase()}
               </h1>
               {isTyping && (
@@ -217,28 +198,27 @@ const Home = () => {
               )}
             </div>
 
-            {/* Chat Area */}
             <div
               ref={chatWindowRef}
-              className="flex-1 p-4  bg-orange-50 overflow-y-auto"
-              id="chatWindow"
+              className="flex-1 p-4 bg-orange-50 overflow-y-auto"
             >
               {messages.length > 0 ? (
-                <div className="flex flex-col gap-3 ">
+                <div className="flex flex-col gap-3">
                   {messages.map((msg, index) => (
                     <div
                       key={index}
                       className={`flex ${
-                        msg.sender === sender ? "justify-end" : "justify-start"
+                        msg.sender === sender
+                          ? "justify-end"
+                          : "justify-start"
                       }`}
                     >
                       <div
-                        className={`max-w-xs px-4 py-2 rounded-2xl shadow-md text-sm  
-                          ${
-                            msg.sender === sender
-                              ? "bg-amber-400 text-gray-900 rounded-br-none"
-                              : "bg-white text-gray-800 border border-gray-300 rounded-bl-none"
-                          }`}
+                        className={`max-w-xs px-4 py-2 rounded-2xl shadow-md text-sm ${
+                          msg.sender === sender
+                            ? "bg-amber-400 text-gray-900"
+                            : "bg-white text-gray-800 border"
+                        }`}
                       >
                         {msg.message}
                       </div>
@@ -252,7 +232,6 @@ const Home = () => {
               )}
             </div>
 
-            {/* Message Input */}
             <div className="p-4 bg-orange-100 flex items-center gap-3">
               <input
                 type="text"
@@ -263,16 +242,13 @@ const Home = () => {
                   handleTyping();
                 }}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    handlSendMessage();
-                  }
+                  if (e.key === "Enter") handlSendMessage();
                 }}
-                className="flex-1 border border-gray-300 bg-amber-50 rounded-3xl px-4 py-2 text-gray-700 focus:outline-none"
+                className="flex-1 border rounded-3xl px-4 py-2"
               />
 
               <button
-                className="bg-amber-400 text-gray-900 font-medium px-5 py-2 rounded-3xl hover:bg-amber-500 transition-all"
+                className="bg-amber-400 px-5 py-2 rounded-3xl"
                 onClick={handlSendMessage}
               >
                 Send
@@ -280,8 +256,8 @@ const Home = () => {
             </div>
           </>
         ) : (
-          <p className="text-gray-500 flex items-center justify-center h-[90vh] text-lg">
-            Select a user to view messages and chat
+          <p className="text-gray-500 flex items-center justify-center h-[90vh]">
+            Select a user to chat
           </p>
         )}
       </div>

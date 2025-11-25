@@ -1,61 +1,16 @@
-import { fileUpload } from "../Utils/cloudinary.js";
 import bcrypt from "bcrypt";
 import User from "../Models/User.Model.js";
 
 // register
 const registerUser = async (req, res) => {
-  // recive user data from frontend
-  const { firstName, lastName, email, password, userName } = req.body;
-
-  // validation
-  if (!firstName) {
-    return res
-      .status(400)
-      .json({ success: false, message: "First Name is required" });
-  }
-
-  if (!lastName) {
-    return res
-      .status(400)
-      .json({ success: false, message: "Last Name is required" });
-  }
-
-  if (!userName) {
-    return res
-      .status(400)
-      .json({ success: false, message: "Username is required" });
-  }
-
-  if (!email) {
-    return res
-      .status(400)
-      .json({ success: false, message: "Email is required" });
-  }
-
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(email)) {
-    return res
-      .status(400)
-      .json({ success: false, message: "Invalid email format" });
-  }
-
-  if (!password) {
-    return res
-      .status(400)
-      .json({ success: false, message: "Password is required" });
-  }
-
-  if (password.length < 6) {
-    return res.status(400).json({
-      success: false,
-      message: "Password must be at least 6 characters",
-    });
-  }
-
-  // check for already exist(email and userName)
   try {
+    // recive user data from frontend
+    const { fullName, email, password } = req.body;
+
     // check email separately
-    const emailTaken = await User.findOne({ email });
+    const normalizedEmail = email.toLowerCase();
+    const emailTaken = await User.findOne({ email: normalizedEmail });
+
     if (emailTaken) {
       return res.status(409).json({
         success: false,
@@ -63,56 +18,20 @@ const registerUser = async (req, res) => {
       });
     }
 
-    // check username separately
-    const userNameTaken = await User.findOne({ userName });
-    if (userNameTaken) {
-      return res.status(409).json({
-        success: false,
-        message: `${userName} is already taken`,
-      });
-    }
-    // check of avatar image file
-    // const avatarImg = req.files?.avatar?.[0]?.path;
-    // if (!avatarImg) {
-    //   return res.status(400).json({
-    //     success: false,
-    //     message: "Avatar image is required",
-    //   });
-    // }
-
-    // // upload avtar image
-    // let uploadAvtarImg;
-    // try {
-    //   uploadAvtarImg = await fileUpload(avatarImg);
-    // } catch (error) {
-    //   return res.status(500).json({
-    //     success: false,
-    //     message: "Error during the file upload",
-    //     error: error.message,
-    //   });
-    // }
-
     // save user in DB
-
     const user = await User.create({
-      firstName,
-      lastName,
+      fullName: fullName.toLowerCase(),
       email: email.toLowerCase(),
       password,
-      userName: userName.toLowerCase(),
-      // avatar: {
-      //   url: uploadAvtarImg.secure_url,
-      //   public_id: uploadAvtarImg.public_id,
-      // },
     });
 
     // return response
     return res.status(201).json({
       success: true,
-      message: `${userName} user has been created`,
+      message: `${fullName} user has been created`,
     });
   } catch (error) {
-    return res.status(400).json({
+    return res.status(500).json({
       success: false,
       message: "Could not create the user",
       error: error.message,
@@ -189,7 +108,7 @@ const loginUser = async (req, res) => {
   return res.status(200).json({
     success: true,
     message: "Login Successful",
-    user: { userName: isUser.userName,  id:isUser._id },
+    user: { userName: isUser.userName, id: isUser._id },
   });
 };
 

@@ -1,6 +1,6 @@
 import { fileUpload, deleteUpload } from "../Utils/cloudinary.js";
 import User from "../Models/User.Model.js";
-
+import redis from "../redis.js"
 // owner Profile
 const ownerProfile = async (req, res) => {
   try {
@@ -17,7 +17,7 @@ const ownerProfile = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: "User Found",
-      user: user,
+      user
     });
   } catch (error) {
     return res.status(500).json({
@@ -29,7 +29,29 @@ const ownerProfile = async (req, res) => {
 };
 
 // user Profile
-const userProfile = async (req, res) => {};
+const userProfile = async (req, res) => {
+  try {
+    const userId = req.params.id;
+
+    const user = await User.findById(userId).select("-password -refreshToken");
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found.",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      user,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+};
 
 // updtae userName
 const updateUserName = async (req, res) => {
@@ -106,8 +128,7 @@ const UpdateUserAvatar = async (req, res) => {
     // replace old data with new data
     await User.findByIdAndUpdate(req.user._id, {
       $set: {
-        avatar: { url: newAvatar.secure_url,
-                  public_id: newAvatar.public_id },
+        avatar: { url: newAvatar.secure_url, public_id: newAvatar.public_id },
       },
     });
 
@@ -177,6 +198,26 @@ const deleteUser = async (req, res) => {
   }
 };
 
+const userOnline = async (req, res) => {
+  try {
+    const userId = req.params.userId;
+
+     // Get online status from Redis
+    const status = await redis.get(`user:${userId}:online`);
+
+    return res.status(200).json({
+      success: true,
+      userId,
+      online: status === "online",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+};
+
 export {
   ownerProfile,
   userProfile,
@@ -184,4 +225,5 @@ export {
   UpdateUserAvatar,
   UpdateUserEmail,
   deleteUser,
+  userOnline,
 };

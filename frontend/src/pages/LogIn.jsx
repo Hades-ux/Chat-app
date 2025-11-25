@@ -16,7 +16,7 @@ const LogIn = () => {
     e.preventDefault();
     setLoading(true);
     try {
-     const response = await axios.post(
+      const response = await axios.post(
         `${API}/auth/login`,
         {
           email,
@@ -30,9 +30,8 @@ const LogIn = () => {
       toast.success("Login Successfull");
 
       if (data?.user?.id) {
-      localStorage.setItem("userId", data.user.id);
-      localStorage.setItem("userName", data.user.userName); // optional
-    }
+        localStorage.setItem("userId", data.user.id);
+      }
       navigate("/home");
     } catch (error) {
       toast.error(error.response?.data?.message || "Login failed!");
@@ -42,8 +41,8 @@ const LogIn = () => {
   }
 
   return (
-    <div className="box-border justify-center items-center h-screen w-screen flex bg-orange-50 font-serif">
-      <div className="border h-96 w-full max-w-md rounded-3xl border-gray-200 bg-white shadow-2xl flex flex-col gap-4 items-center">
+    <div className="box-border justify-center items-center h-screen w-screen flex bg-gray-600 font-serif">
+      <div className="border h-96 w-full max-w-sm rounded-3xl border-gray-200 bg-white shadow-2xl flex flex-col gap-4 items-center">
         <h2 className="text-2xl font-semibold text-center mt-4 mb-2">Login</h2>
 
         {/* form */}
@@ -60,7 +59,7 @@ const LogIn = () => {
               id="Email"
               name="Email"
               type="email"
-              className="border border-gray-300 rounded-lg px-4 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-all duration-200 w-full"
+              class="input-box"
               placeholder="example@mail.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -78,28 +77,23 @@ const LogIn = () => {
             </label>
 
             <div
-              className={`flex items-center border border-gray-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-gray-400 transition-all duration-200`}
+      
             >
-              <input
-                id="password"
-                name="password"
-                className="flex-1 px-4 py-2 text-gray-700 placeholder-gray-400 bg-transparent focus:outline-none"
-                type={showPassword ? "text" : "password"}
-                placeholder="Enter your password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                minLength={6}
-              />
-
-              <button
-                type="button"
-                onClick={() => setShowPassword((prev) => !prev)}
-                className="text-sm text-gray-500 hover:text-gray-700 px-3 py-2 transition-all duration-200 cursor-pointer"
-                aria-label={showPassword ? "Hide password" : "Show password"}
-              >
-                {showPassword ? "Hide" : "Show"}
-              </button>
+              <div className="relative">
+            <input
+              type={showPassword ? "text" : "password"}
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              class="input-box"
+            />
+            <span
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-2.5 cursor-pointer text-sm hover:opacity-80"
+            >
+              {showPassword ? "Hide" : "Show"}
+            </span>
+          </div>
             </div>
           </div>
 

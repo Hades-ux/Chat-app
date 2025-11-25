@@ -7,6 +7,7 @@ import {
   UpdateUserAvatar,
   UpdateUserEmail,
   updateUserName,
+  userOnline,
   userProfile,
 } from "../Controllers/user.controller.js";
 
@@ -35,4 +36,6 @@ router.patch("/update/userEmail", authMiddleware, UpdateUserEmail);
 // update delete User
 router.delete("/delete/user", authMiddleware, deleteUser);
 
+// userOnline
+router.get("/online/:id", userOnline)
 export default router;

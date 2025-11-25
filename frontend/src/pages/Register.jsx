@@ -4,9 +4,7 @@ import { NavLink, useNavigate} from "react-router-dom";
 import { toast } from "react-toastify";
 
 const Register = () => {
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [userName, setUserName] = useState("");
+  const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -19,7 +17,7 @@ const Register = () => {
   const handleRegister = async (e) => {
     e.preventDefault();
 
-    if (!firstName || !lastName || !userName || !email || !password) {
+    if (!fullName || !email || !password) {
       toast.error("Please fill in all fields!");
       return;
     }
@@ -27,9 +25,7 @@ const Register = () => {
 
     try {
       await axios.post(`${API}/auth/register`, {
-        firstName,
-        lastName,
-        userName,
+        fullName,
         email,
         password,
       });
@@ -45,36 +41,19 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-orange-50">
+    <div className="min-h-screen flex items-center justify-center bg-gray-600">
       <div className="bg-white p-8 rounded-2xl shadow-lg w-full max-w-md border border-gray-200">
         <h2 className="text-3xl font-semibold text-center mb-6">
           Create Account
         </h2>
 
         <form onSubmit={handleRegister} className="space-y-4">
-          <div className="flex gap-4">
-            <input
-              type="text"
-              placeholder="First Name"
-              value={firstName}
-              onChange={(e) => setFirstName(e.target.value)}
-              className="w-1/2 border border-gray-200 px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent"
-            />
-            <input
-              type="text"
-              placeholder="Last Name"
-              value={lastName}
-              onChange={(e) => setLastName(e.target.value)}
-              className="w-1/2 border border-gray-200 px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent"
-            />
-          </div>
-
           <input
             type="text"
-            placeholder="Username"
-            value={userName}
-            onChange={(e) => setUserName(e.target.value)}
-            className="w-full border border-gray-200 px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent"
+            placeholder="Full Name"
+            value={fullName}
+            onChange={(e) => setFullName(e.target.value)}
+            class="input-box"
           />
 
           <input
@@ -82,7 +61,7 @@ const Register = () => {
             placeholder="Email Address"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full border border-gray-200 px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent"
+            class="input-box"
           />
 
           <div className="relative">
@@ -91,7 +70,7 @@ const Register = () => {
               placeholder="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full border border-gray-200 px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent"
+              class="input-box"
             />
             <span
               onClick={() => setShowPassword(!showPassword)}

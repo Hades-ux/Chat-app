@@ -9,12 +9,14 @@ import {
 } from "../Controllers/auth.Controller.js";
 import { upload } from "../Middlewares/multer.Middleware.js";
 import { authMiddleware } from "../Middlewares/jwt.Middleware.js";
+import { validate } from "../Middlewares/validation.Middleware.js";
+import { registerValidation } from "../validation/auth.validation.js";
 
 const router = Router();
 
 // register user
 router.post(
-  "/register",
+  "/register", validate(registerValidation),
   upload.fields([{ name: "avatar", maxCount: 1 }]),
   registerUser
 );
