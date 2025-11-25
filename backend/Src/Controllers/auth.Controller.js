@@ -1,36 +1,47 @@
 import bcrypt from "bcrypt";
 import User from "../Models/User.Model.js";
+import { registerValidation } from "../validation/auth.validation.js";
 
 // register
 const registerUser = async (req, res) => {
   try {
-    // recive user data from frontend
     const { fullName, email, password } = req.body;
 
-    // check email separately
+    // 1. VALIDATE
+    const errorMessage = registerValidation({ fullName, email, password });
+    if (errorMessage) {
+      return res.status(400).json({ success: false, message: errorMessage });
+    }
+
+    // 2. CHECK IF EMAIL EXISTS
     const normalizedEmail = email.toLowerCase();
-    const emailTaken = await User.findOne({ email: normalizedEmail });
+    const emailTaken = await User.findOne({ email:normalizedEmail });
 
     if (emailTaken) {
       return res.status(409).json({
         success: false,
-        message: `${email} is already registered`,
+        message: `${emailTaken.email} is already registered`,
       });
     }
 
-    // save user in DB
-    const user = await User.create({
+    // 3. CREATE USER
+    await User.create({
       fullName: fullName.toLowerCase(),
-      email: email.toLowerCase(),
+      email: normalizedEmail,
       password,
     });
 
-    // return response
     return res.status(201).json({
       success: true,
       message: `${fullName} user has been created`,
     });
   } catch (error) {
+     if (error.code === 11000) {
+      return res.status(409).json({
+        success: false,
+        message: `${error} is already registered`,
+      });
+    }
     return res.status(500).json({
       success: false,
       message: "Could not create the user",

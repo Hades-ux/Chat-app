@@ -29,13 +29,20 @@ const Register = () => {
         email,
         password,
       });
-      toast.success("Account created successfully!");
-      navigate("/")
-    } catch (error) {
-      console.log("error: ", error.message);
 
-      toast.error("Not able to create account: " + error.message);
-    } finally {
+      toast.success("Account created successfully!");
+      navigate("/");
+
+    } catch (error) {
+  console.log("Axios error: ", error.response);
+  console.log("Axios error: ", error.response.data);
+
+  if (error.response && error.response.data && error.response?.data?.message) {
+    toast.error("Not able to create account: " + error.response?.data?.message);
+  } else {
+    toast.error("Not able to create account: " + error.message);
+  }
+}finally {
       setLoading(false);
     }
   };

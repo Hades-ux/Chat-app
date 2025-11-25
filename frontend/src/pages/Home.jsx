@@ -3,6 +3,7 @@ import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { socket } from "../socket.js";
 import { toast } from "react-toastify";
+import { Tooltip } from "../component/ToolTip";
 
 const Home = () => {
   const [connections, setconnections] = useState([]);
@@ -78,7 +79,7 @@ const Home = () => {
   // SELECT USER
   async function handleClick(receiver) {
     setSelectedUser(receiver);
-    setMessages([]); 
+    setMessages([]);
 
     const roomId = [sender, receiver._id].sort().join("_");
     socket.emit("joinRoom", roomId);
@@ -155,8 +156,22 @@ const Home = () => {
 
   return (
     <div className="h-screen bg-orange-50 flex font-serif overflow-hidden">
-      <nav className="w-15 border-r border-gray-200 flex justify-center">
-        profile
+      <nav className="w-15 border-r border-gray-200 flex flex-col items-center justify-between gap-5 py-4">
+        <Tooltip text="Add Connection" position="bottom">
+          <span className="material-symbols-outlined text-3xl">person_add</span>
+        </Tooltip>
+
+        <div className=" flex flex-col items-center gap-5 border-t py-2 w-full">
+          <Tooltip text="Settings">
+            <span className="material-symbols-outlined cursor-pointer">
+              settings
+            </span>
+          </Tooltip>
+
+          <Tooltip text="Profile"position="top">
+            <span className="material-symbols-outlined">account_circle</span>
+          </Tooltip>
+        </div>
       </nav>
 
       <div className="w-4/12 border-r border-gray-200 py-4 px-2">
@@ -175,7 +190,9 @@ const Home = () => {
             <div key={connection._id} onClick={() => handleClick(connection)}>
               <div className="bg-white border rounded-lg p-4 cursor-pointer">
                 {connection.firstName.toUpperCase()}
-                <div className="text-sm text-gray-600">{connection.message}</div>
+                <div className="text-sm text-gray-600">
+                  {connection.message}
+                </div>
               </div>
             </div>
           ))
@@ -208,9 +225,7 @@ const Home = () => {
                     <div
                       key={index}
                       className={`flex ${
-                        msg.sender === sender
-                          ? "justify-end"
-                          : "justify-start"
+                        msg.sender === sender ? "justify-end" : "justify-start"
                       }`}
                     >
                       <div

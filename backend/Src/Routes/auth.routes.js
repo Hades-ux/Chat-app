@@ -16,8 +16,9 @@ const router = Router();
 
 // register user
 router.post(
-  "/register", validate(registerValidation),
+  "/register",
   upload.fields([{ name: "avatar", maxCount: 1 }]),
+  validate(registerValidation),
   registerUser
 );
 
