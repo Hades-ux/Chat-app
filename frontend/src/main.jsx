@@ -21,7 +21,7 @@ createRoot(document.getElementById('root')).render(
         pauseOnFocusLoss
         draggable
         pauseOnHover
-        theme="colored"         // Optional styling
+        theme="colored"
       />
   </BrowserRouter>
   </StrictMode>,

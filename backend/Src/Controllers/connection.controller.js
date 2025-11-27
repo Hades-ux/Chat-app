@@ -11,21 +11,21 @@ const addConnection = async (req, res) => {
         message: "Unauthorized",
       });
 
-    //   email is use to add the user
-    const { userEmail } = req.body;
+    // email is use to add the user
+    const { email } = req.body;
 
-    if (!userEmail)
+    if (!email)
       return res.status(400).json({
         success: false,
         message: "Email field can not be empty",
       });
 
-    const addUser = await User.findOne({ email: userEmail });
+    const addUser = await User.findOne({ email: email });
 
     if (!addUser)
       return res.status(401).json({
         success: false,
-        message: `${userEmail} User not found with this email`,
+        message: `${email} User not found with this email`,
       });
 
     if (addUser._id.toString() === user.toString()) {
@@ -42,7 +42,7 @@ const addConnection = async (req, res) => {
     );
     return res.status(200).json({
       success: true,
-      message: `${userEmail} user added to connection successfully `,
+      message: `${email} user added to connection successfully `,
     });
   } catch (error) {
     return res.status(500).json({
@@ -63,7 +63,7 @@ const fetchConnection = async (req, res) => {
         message: "Unauthorized",
       });
 
-    const response = await Connection.findOne({owner: req.user._id}).populate("connection", "firstName email avatar messages")
+    const response = await Connection.findOne({owner: req.user._id}).populate("connection", "fullName email avatar")
     return res.status(200).json({
       success: true,
       message: 'connection fetch successfully',

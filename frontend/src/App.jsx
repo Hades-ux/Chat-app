@@ -4,9 +4,11 @@ import Home from "./pages/Home.jsx"
 import Register from "./pages/Register.jsx"
 import Forgotpassword from'./pages/Forgotpassword.jsx'
 import { Routes, Route } from "react-router-dom";
+import { ChatProvider } from "./context/ChatContext";
 
 const App = () => {
   return (
+    <ChatProvider>
       <Routes>
         <Route path="/" element={<LogIn />} />
         <Route path="/registerUser" element={<Register />} />
@@ -14,6 +16,7 @@ const App = () => {
         <Route path="/ForgotPassword" element={<Forgotpassword />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
+    </ChatProvider>
   )
 }
 
