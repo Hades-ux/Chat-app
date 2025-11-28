@@ -5,9 +5,8 @@ import { useChat } from "../context/ChatContext";
 const SideBar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [email, setEmail] = useState("");
-  const { addConnection} = useChat()
+  const { addConnection } = useChat();
 
-  // add Connection
   async function handleAddConnection(e) {
     e.preventDefault();
     if (!email) {
@@ -21,65 +20,52 @@ const SideBar = () => {
 
   return (
     <>
-      <nav className="w-15 border-r border-gray-200 flex flex-col items-center justify-between gap-5 py-4">
+      <nav className="w-16 border-r border-gray-200 flex flex-col items-center justify-between gap-6 py-4 bg-gray-50 shadow-sm">
         <span
-          className="material-symbols-outlined cursor-pointer"
+          className="material-symbols-outlined cursor-pointer text-gray-700 hover:text-gray-900 transition"
           onClick={() => setIsOpen(true)}
         >
           person_add
         </span>
 
-        <div className="flex flex-col items-center gap-5 border-t py-2 w-full">
-          <span className="material-symbols-outlined cursor-pointer">
+        <div className="flex flex-col items-center gap-6 border-t pt-4">
+          <span className="material-symbols-outlined cursor-pointer text-gray-700 hover:text-gray-900">
             settings
           </span>
-
-          <span className="material-symbols-outlined cursor-pointer">
+          <span className="material-symbols-outlined cursor-pointer text-gray-700 hover:text-gray-900">
             account_circle
           </span>
         </div>
       </nav>
 
-      {/* BACKGROUND BLUR + OVERLAY */}
       {isOpen && (
         <div
           className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-40"
-          onClick={() => setIsOpen(false)} // close when clicking outside
+          onClick={() => setIsOpen(false)}
         >
-          {/* POPUP */}
           <div
-            className="bg-gray-100 w-96 h-56 border border-gray-300 rounded-xl p-4 z-50"
-            onClick={(e) => e.stopPropagation()} // prevents closing when clicking inside
+            className="bg-white w-96 p-6 rounded-2xl shadow-lg border border-gray-200 z-50"
+            onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex justify-between items-center">
-              <h1 className="text-xl font-semibold">
-                Enter email to add connection
-              </h1>
-
+            <div className="flex justify-between items-center mb-4">
+              <h1 className="text-xl font-semibold">Add Connection</h1>
               <span
-                className="material-symbols-outlined border border-gray-300 bg-gray-200 hover:bg-gray-400 cursor-pointer rounded-sm"
+                className="material-symbols-outlined cursor-pointer text-gray-600 hover:text-gray-900"
                 onClick={() => setIsOpen(false)}
               >
                 close
               </span>
             </div>
 
-            <form
-              onSubmit={handleAddConnection}
-              className="p-4 flex flex-col gap-2"
-            >
+            <form onSubmit={handleAddConnection} className="flex flex-col gap-3">
               <input
                 type="email"
                 placeholder="example@example.com"
-                className="input-box"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                className="input-box"
               />
-
-              <button
-                type="submit"
-                className="bg-gray-500 p-3 rounded-xl cursor-pointer text-white"
-              >
+              <button className="bg-gray-700 hover:bg-gray-800 text-white py-2 rounded-lg transition">
                 Add Connection
               </button>
             </form>

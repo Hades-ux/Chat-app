@@ -59,7 +59,7 @@ const LogIn = () => {
               id="Email"
               name="Email"
               type="email"
-              class="input-box"
+              className="input-box"
               placeholder="example@mail.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -85,7 +85,7 @@ const LogIn = () => {
               placeholder="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              class="input-box"
+              className="input-box"
             />
             <span
               onClick={() => setShowPassword(!showPassword)}

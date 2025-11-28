@@ -1,10 +1,11 @@
 import { useState, useRef, useEffect } from "react";
 import { useChat } from "../context/ChatContext";
+import axios from "axios";
 
 const MessagePanel = () => {
   const { selectedUser, messages, setMessages, sentMsg, setSentMsg, socket } = useChat();
   const [isTyping, setIsTyping] = useState(false);
-  const [myTypingTimeout, setMyTypingTimeout] = useState(null);
+  const [typingTimeout, setTypingTimeout] = useState(null);
   const chatWindowRef = useRef(null);
   const sender = localStorage.getItem("userId");
   const API = import.meta.env.VITE_API_URL;
@@ -15,64 +16,36 @@ const MessagePanel = () => {
     }
   };
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+  useEffect(() => scrollToBottom(), [messages]);
 
-  // TYPING
   const handleTyping = () => {
     if (!selectedUser) return;
 
-    socket.emit("Typing", {
-      sender,
-      receiver: selectedUser._id,
-      isTyping: true,
-    });
+    socket.emit("Typing", { sender, receiver: selectedUser._id, isTyping: true });
 
-    if (myTypingTimeout) clearTimeout(myTypingTimeout);
+    if (typingTimeout) clearTimeout(typingTimeout);
 
     const timeout = setTimeout(() => {
-      socket.emit("Typing", {
-        sender,
-        receiver: selectedUser._id,
-        isTyping: false,
-      });
+      socket.emit("Typing", { sender, receiver: selectedUser._id, isTyping: false });
     }, 500);
 
-    setMyTypingTimeout(timeout);
+    setTypingTimeout(timeout);
   };
 
-  async function handlSendMessage() {
+  const handleSendMessage = async () => {
     if (!sentMsg.trim()) return;
 
-    const messageData = {
-      sender: sender,
-      receiver: selectedUser._id,
-      message: sentMsg,
-    };
-
+    const messageData = { sender, receiver: selectedUser._id, message: sentMsg };
     socket.emit("sendMessage", messageData);
-
     setMessages((prev) => [...prev, messageData]);
+    setSentMsg("");
 
     await axios.post(`${API}/message/create/${selectedUser._id}`, messageData, {
       withCredentials: true,
     });
-
-    setSentMsg("");
-  }
+  };
 
   useEffect(() => {
-    socket.on("connect", () => {
-      console.log("CLIENT CONNECTED:", socket.id);
-    });
-
-    const sender = localStorage.getItem("userId");
-
-    socket.connect({
-      query: { sender },
-    });
-
     socket.on("receiveMessage", (data) => {
       if (selectedUser && selectedUser._id === data.sender) {
         setMessages((prev) => [...prev, data]);
@@ -86,82 +59,66 @@ const MessagePanel = () => {
     });
 
     return () => {
-      socket.off("connect");
       socket.off("receiveMessage");
       socket.off("Typing");
     };
   }, [selectedUser]);
 
   return (
-    <div className="flex-1 flex flex-col bg-white rounded-xl shadow-sm">
-      {selectedUser ? (
+    <div className="flex-1 flex flex-col bg-white rounded-2xl shadow-lg">
+      {!selectedUser ? (
+        <p className="flex items-center justify-center h-full text-gray-500 text-lg">
+          Select a user to start chatting
+        </p>
+      ) : (
         <>
-          <div className="p-4 border-b bg-orange-100">
-            <h1 className="text-2xl font-bold">
-              {selectedUser.fullName.toUpperCase()}
-            </h1>
-            {isTyping && (
-              <div className="text-gray-500 text-sm px-3 py-1">typing...</div>
-            )}
+          <div className="p-4 border-b bg-gray-100 flex flex-col gap-1">
+            <h2 className="text-xl font-semibold">{selectedUser.fullName}</h2>
+            {isTyping && <span className="text-sm text-gray-500">typing...</span>}
           </div>
 
           <div
             ref={chatWindowRef}
-            className="flex-1 p-4 bg-orange-50 overflow-y-auto"
+            className="flex-1 p-4 overflow-y-auto bg-gray-50 flex flex-col gap-3"
           >
-            {messages.length > 0 ? (
-              <div className="flex flex-col gap-3">
-                {messages.map((msg, index) => (
-                  <div
-                    key={index}
-                    className={`flex ${
-                      msg.sender === sender ? "justify-end" : "justify-start"
-                    }`}
-                  >
-                    <div
-                      className={`max-w-xs px-4 py-2 rounded-2xl shadow-md text-sm ${
-                        msg.sender === sender
-                          ? "bg-amber-400 text-gray-900"
-                          : "bg-white text-gray-800 border"
-                      }`}
-                    >
-                      {msg.message}
-                    </div>
-                  </div>
-                ))}
+            {messages.map((msg, i) => (
+              <div
+                key={i}
+                className={`flex ${msg.sender === sender ? "justify-end" : "justify-start"}`}
+              >
+                <div
+                  className={`px-4 py-2 rounded-2xl shadow-sm max-w-xs text-sm ${
+                    msg.sender === sender
+                      ? "bg-gray-400 text-white"
+                      : "bg-white text-gray-800"
+                  }`}
+                >
+                  {msg.message}
+                </div>
               </div>
-            ) : (
-              <p className="text-gray-500 text-center mt-10">No messages yet</p>
-            )}
+            ))}
           </div>
 
-          <div className="p-4 bg-orange-100 flex items-center gap-3">
+          <div className="p-4 flex items-center gap-3 border-t bg-gray-100">
             <input
               type="text"
-              placeholder="type message..."
+              placeholder="Type your message..."
               value={sentMsg}
               onChange={(e) => {
                 setSentMsg(e.target.value);
                 handleTyping();
               }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") handlSendMessage();
-              }}
-              className="flex-1 border rounded-3xl px-4 py-2"
+              onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
+              className="flex-1 border rounded-full px-4 py-2"
             />
-
             <button
-              className="bg-amber-400 px-5 py-2 rounded-3xl"
-              onClick={handlSendMessage}
+              onClick={handleSendMessage}
+              className="bg-gray-700 text-white px-5 py-2 rounded-full hover:bg-gray-800 transition"
             >
               Send
             </button>
           </div>
         </>
-      ) : (
-        <p className="text-gray-500 flex items-center justify-center h-[90vh]">
-          Select a user to chat
-        </p>
       )}
     </div>
   );

@@ -2,29 +2,26 @@ import { useEffect } from "react";
 import { useChat } from "../context/ChatContext";
 
 const ConnectionList = () => {
-  const { connections=[], fetchConnections, logout, selectUser  } = useChat();
+  const { connections = [], fetchConnections, logout, selectUser } = useChat();
 
-  // Fetch updated list
   useEffect(() => {
     fetchConnections();
   }, []);
 
- // SELECT USER
   async function handleClick(receiver) {
-    await selectUser()
+    await selectUser(receiver);
   }
 
-  // LOGOUT
   async function handleLogOut() {
-   await logout()
+    await logout();
   }
 
   return (
-    <div className="w-4/12 border-r border-gray-200 py-4 px-2">
-      <div className="flex items-center mb-4 justify-between px-4">
-        <h1 className="text-3xl">Chat-app</h1>
+    <div className="w-4/12 border-r border-gray-200 py-4 px-4 bg-gray-50">
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold">ChatApp</h1>
         <span
-          className="material-symbols-outlined cursor-pointer"
+          className="material-symbols-outlined cursor-pointer text-gray-600 hover:text-gray-900"
           onClick={handleLogOut}
         >
           more_vert
@@ -34,20 +31,16 @@ const ConnectionList = () => {
       {connections.length > 0 ? (
         connections.map((connection) => (
           <div
-            className="mb-2"
             key={connection._id}
             onClick={() => handleClick(connection)}
+            className="bg-white shadow-sm rounded-xl p-4 mb-3 cursor-pointer hover:shadow-md transition"
           >
-            <div className="bg-white border border-gray-300 shadow-sm hover:scale-103 rounded-lg p-4 cursor-pointer duration-300">
-              {connection.fullName.toUpperCase()}
-              <div className="text-sm text-gray-600">{connection.email}</div>
-            </div>
+            <h2 className="font-semibold text-gray-800">{connection.fullName}</h2>
+            <p className="text-sm text-gray-500 truncate">{connection.email}</p>
           </div>
         ))
       ) : (
-        <div className="text-center text-gray-500 mt-10">
-          No connections found.
-        </div>
+        <p className="text-center text-gray-500 mt-10">No connections found.</p>
       )}
     </div>
   );
