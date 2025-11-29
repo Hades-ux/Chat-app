@@ -4,7 +4,6 @@ import http from "http";
 import { Server } from "socket.io";
 import cors from "cors";
 import redis from "./Src/redis.js";
-import Connection from "./Src/Models/Connection.Model.js";
 
 const PORT = process.env.PORT || 4444;
 

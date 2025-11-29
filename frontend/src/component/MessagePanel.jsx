@@ -3,7 +3,8 @@ import { useChat } from "../context/ChatContext";
 import axios from "axios";
 
 const MessagePanel = () => {
-  const { selectedUser, messages, setMessages, sentMsg, setSentMsg, socket } = useChat();
+  const { selectedUser, messages, setMessages, sentMsg, setSentMsg, socket } =
+    useChat();
   const [isTyping, setIsTyping] = useState(false);
   const [typingTimeout, setTypingTimeout] = useState(null);
   const chatWindowRef = useRef(null);
@@ -12,7 +13,8 @@ const MessagePanel = () => {
 
   const scrollToBottom = () => {
     if (chatWindowRef.current) {
-      chatWindowRef.current.scrollTop = chatWindowRef.current.scrollHeight;
+      chatWindowRef.current.scrollTop =
+        chatWindowRef.current.scrollHeight;
     }
   };
 
@@ -21,12 +23,20 @@ const MessagePanel = () => {
   const handleTyping = () => {
     if (!selectedUser) return;
 
-    socket.emit("Typing", { sender, receiver: selectedUser._id, isTyping: true });
+    socket.emit("Typing", {
+      sender,
+      receiver: selectedUser._id,
+      isTyping: true,
+    });
 
     if (typingTimeout) clearTimeout(typingTimeout);
 
     const timeout = setTimeout(() => {
-      socket.emit("Typing", { sender, receiver: selectedUser._id, isTyping: false });
+      socket.emit("Typing", {
+        sender,
+        receiver: selectedUser._id,
+        isTyping: false,
+      });
     }, 500);
 
     setTypingTimeout(timeout);
@@ -35,14 +45,21 @@ const MessagePanel = () => {
   const handleSendMessage = async () => {
     if (!sentMsg.trim()) return;
 
-    const messageData = { sender, receiver: selectedUser._id, message: sentMsg };
+    const messageData = {
+      sender,
+      receiver: selectedUser._id,
+      message: sentMsg,
+    };
+
     socket.emit("sendMessage", messageData);
     setMessages((prev) => [...prev, messageData]);
     setSentMsg("");
 
-    await axios.post(`${API}/message/create/${selectedUser._id}`, messageData, {
-      withCredentials: true,
-    });
+    await axios.post(
+      `${API}/message/create/${selectedUser._id}`,
+      messageData,
+      { withCredentials: true }
+    );
   };
 
   useEffect(() => {
@@ -65,18 +82,30 @@ const MessagePanel = () => {
   }, [selectedUser]);
 
   return (
-    <div className="flex-1 flex flex-col bg-white rounded-2xl shadow-lg">
+    <div className="flex-1 flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden">
       {!selectedUser ? (
         <p className="flex items-center justify-center h-full text-gray-500 text-lg">
           Select a user to start chatting
         </p>
       ) : (
         <>
-          <div className="p-4 border-b bg-gray-100 flex flex-col gap-1">
-            <h2 className="text-xl font-semibold">{selectedUser.fullName}</h2>
-            {isTyping && <span className="text-sm text-gray-500">typing...</span>}
+          {/* HEADER */}
+          <div className="p-4 border-b bg-gray-100 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center text-gray-600">
+              {selectedUser.fullName.charAt(0)}
+            </div>
+
+            <div>
+              <h2 className="text-xl font-semibold text-gray-800">
+                {selectedUser.fullName}
+              </h2>
+              {isTyping && (
+                <span className="text-sm text-gray-500">typing...</span>
+              )}
+            </div>
           </div>
 
+          {/* MESSAGE AREA */}
           <div
             ref={chatWindowRef}
             className="flex-1 p-4 overflow-y-auto bg-gray-50 flex flex-col gap-3"
@@ -84,13 +113,17 @@ const MessagePanel = () => {
             {messages.map((msg, i) => (
               <div
                 key={i}
-                className={`flex ${msg.sender === sender ? "justify-end" : "justify-start"}`}
+                className={`flex ${
+                  msg.sender === sender
+                    ? "justify-end"
+                    : "justify-start"
+                }`}
               >
                 <div
                   className={`px-4 py-2 rounded-2xl shadow-sm max-w-xs text-sm ${
                     msg.sender === sender
-                      ? "bg-gray-400 text-white"
-                      : "bg-white text-gray-800"
+                      ? "bg-gray-700 text-white"
+                      : "bg-white text-gray-800 border border-gray-200"
                   }`}
                 >
                   {msg.message}
@@ -99,6 +132,7 @@ const MessagePanel = () => {
             ))}
           </div>
 
+          {/* INPUT AREA */}
           <div className="p-4 flex items-center gap-3 border-t bg-gray-100">
             <input
               type="text"
@@ -108,9 +142,12 @@ const MessagePanel = () => {
                 setSentMsg(e.target.value);
                 handleTyping();
               }}
-              onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
-              className="flex-1 border rounded-full px-4 py-2"
+              onKeyDown={(e) =>
+                e.key === "Enter" && handleSendMessage()
+              }
+              className="flex-1 border border-gray-300 rounded-full px-4 py-2 focus:ring-gray-500 focus:border-gray-500"
             />
+
             <button
               onClick={handleSendMessage}
               className="bg-gray-700 text-white px-5 py-2 rounded-full hover:bg-gray-800 transition"

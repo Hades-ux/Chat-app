@@ -60,7 +60,7 @@ const Register = () => {
             placeholder="Full Name"
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
-            class="input-box"
+            className="input-box"
           />
 
           <input
@@ -68,7 +68,7 @@ const Register = () => {
             placeholder="Email Address"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            class="input-box"
+            className="input-box"
           />
 
           <div className="relative">
@@ -77,7 +77,7 @@ const Register = () => {
               placeholder="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              class="input-box"
+              className="input-box"
             />
             <span
               onClick={() => setShowPassword(!showPassword)}

@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useState } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
@@ -9,27 +9,37 @@ const ChatContext = createContext();
 
 export const ChatProvider = ({ children }) => {
   const navigate = useNavigate();
+  const userId = localStorage.getItem("userId");
 
   const [connections, setConnections] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [messages, setMessages] = useState([]);
   const [sentMsg, setSentMsg] = useState("");
-  const [sender, setSender] = useState(null);
 
-  // fetch Connection
+  // fetch connections with last message
   const fetchConnections = async () => {
     try {
-      const { data } = await axios.get(`${API}/connection/fetch`, {
+      const { data } = await axios.get(`${API}/message/lastMessage`, {
         withCredentials: true,
       });
-      setConnections(data.data || []);
+
+      if (!data?.data) return;
+
+      // normalize connections
+      const normalizedConnections = data.data.map((conn) => ({
+        _id: conn.user?._id || conn._id, // fallback
+        fullName: conn.user?.fullName || conn.fullName || "Unknown",
+        email: conn.user?.email || conn.email || "",
+        lastMessage: conn?.lastMessage,
+        lastMessageTime: conn?.lastMessageTime,
+      }));
+      setConnections(normalizedConnections);
     } catch (error) {
       console.error(error);
       toast.error("Failed to load connections");
     }
   };
 
-  // addConnection
   const addConnection = async (email) => {
     try {
       const res = await axios.post(
@@ -39,21 +49,18 @@ export const ChatProvider = ({ children }) => {
       );
       toast.success(res.data.message);
       fetchConnections();
+      socket.emit("new-connection"); // notify other clients
     } catch (error) {
       toast.error(error.response?.data?.message || error.message);
     }
   };
 
-  // logout
   const logout = async () => {
-    const confirmLogout = window.confirm("Do You want to Log Out?");
+    const confirmLogout = window.confirm("Do you want to Log Out?");
     if (!confirmLogout) return;
+
     try {
-      const res = await axios.post(
-        `${API}/auth/logOut`,
-        {},
-        { withCredentials: true }
-      );
+      const res = await axios.post(`${API}/auth/logOut`, {}, { withCredentials: true });
       toast.success(res.data.message);
       navigate("/");
     } catch (error) {
@@ -61,15 +68,12 @@ export const ChatProvider = ({ children }) => {
     }
   };
 
-  // selectUser
   const selectUser = async (user) => {
-    if (!user) return; // safety check
+    if (!user) return;
 
     setSelectedUser(user);
-    setMessages([]); // reset old messages
-
-    const sender = localStorage.getItem("userId");
-    const roomId = [sender, user._id].sort().join("_");
+    setMessages([]);
+    const roomId = [userId, user._id].sort().join("_");
     socket.emit("joinRoom", roomId);
 
     try {
@@ -83,11 +87,6 @@ export const ChatProvider = ({ children }) => {
     }
   };
 
-  // Socket listener
-  useEffect(() => {
-    socket.on("new-connection", fetchConnections);
-    return () => socket.off("new-connection", fetchConnections);
-  }, []);
 
   return (
     <ChatContext.Provider

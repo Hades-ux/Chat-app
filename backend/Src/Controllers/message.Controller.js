@@ -51,7 +51,6 @@ const createMessage = async (req, res) => {
       await connection.save();
     }
 
-
     return res.status(201).json({
       success: true,
       message: "Message sent successfully",
@@ -119,10 +118,8 @@ const fetchMessage = async (req, res) => {
         { sender: sender, receiver: receiver },
         { sender: receiver, receiver: sender },
       ],
-    })
-      .sort({ createdAt: 1 });
+    }).sort({ createdAt: 1 });
 
-   
     return res.status(200).json({
       success: true,
       data: message,
@@ -136,4 +133,49 @@ const fetchMessage = async (req, res) => {
   }
 };
 
-export { createMessage, markMessageAsRead, fetchMessage };
+const getConnectionsWithLastMsg = async (req, res) => {
+  try {
+    const userId = req.user?._id;
+
+    const connectionDoc = await Connection.findOne({ owner: userId })
+      .populate("connection", "fullName")
+      .exec();
+
+    if (!connectionDoc) {
+      return res.status(200).json({ success: true, data: [] });
+    }
+
+    const connections = connectionDoc.connection;
+
+    // Use Promise.all to wait for all async operations
+    const results = await Promise.all(
+      connections.map(async (conn) => {
+        const lastMsg = await Message.findOne({
+          $or: [
+            { sender: userId, receiver: conn._id },
+            { sender: conn._id, receiver: userId },
+          ],
+        })
+          .sort({ createdAt: -1 })
+          .exec();
+
+        return {
+          user: conn,
+          lastMessage: lastMsg?.message || "",
+          lastMessageTime: lastMsg?.createdAt || null,
+        };
+      })
+    );
+
+    return res.status(200).json({ success: true, data: results });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+export {
+  createMessage,
+  markMessageAsRead,
+  fetchMessage,
+  getConnectionsWithLastMsg,
+};
