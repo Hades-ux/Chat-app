@@ -8,7 +8,6 @@ import redis from "./Src/redis.js";
 const PORT = process.env.PORT || 4444;
 const allowedOrigins = [
   "https://chat-app-six-delta-19.vercel.app",
-  "http://localhost:5173",
 ];
 
 // Connect database and redis
