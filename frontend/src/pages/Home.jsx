@@ -1,4 +1,4 @@
-import SideBar from "../component/sideBar.jsx";
+import SideBar from "../component/SideBar.jsx";
 import ConnectionList from "../component/ConnectionList.jsx";
 import MessagePanel from "../component/MessagePanel.jsx";
 
