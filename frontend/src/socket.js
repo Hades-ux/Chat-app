@@ -1,6 +1,6 @@
 import { io } from "socket.io-client";
 
-export const socket = io("http://localhost:9999", {
+export const socket = io("https://chat-app-ijbu.vercel.app/api/v1", {
   transports: ["websocket","polling"],
   withCredentials: true,
 });
