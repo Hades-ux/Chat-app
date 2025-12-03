@@ -6,6 +6,10 @@ import cors from "cors";
 import redis from "./Src/redis.js";
 
 const PORT = process.env.PORT || 4444;
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://chat-app-six-delta-19.vercel.app",
+];
 
 // Connect database and redis
 await redis.connect();
@@ -13,8 +17,7 @@ await connectDB();
 
 app.use(
   cors({
-    origin: "http://localhost:5173",
-    origin: "https://chat-app-six-delta-19.vercel.app",
+    origin: allowedOrigins,
     credentials: true,
   })
 );
@@ -24,8 +27,7 @@ const server = http.createServer(app);
 // initialize socket.io
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:5173",
-    origin: "https://chat-app-six-delta-19.vercel.app",
+    origin: allowedOrigins,
     methods: ["GET", "POST"],
     credentials: true,
   },
