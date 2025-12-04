@@ -65,6 +65,8 @@ export const ChatProvider = ({ children }) => {
       navigate("/");
     } catch (error) {
       toast.error("Logout failed");
+    } finally{
+      navigate("/");
     }
   };
 
