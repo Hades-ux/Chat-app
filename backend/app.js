@@ -5,10 +5,11 @@ import cors from "cors";
 
 configDotenv();
 
+
 const app = express();
 app.use(
    cors({
-    origin: "https://chat-app-six-delta-19.vercel.app",
+    origin: "*",
     credentials: true,
   })
 )

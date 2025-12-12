@@ -1,314 +1,131 @@
 import bcrypt from "bcrypt";
 import User from "../Models/User.Model.js";
 import { registerValidation } from "../validation/auth.validation.js";
+import redis from "../redis.js";
 
-// register
+// REGISTER
 const registerUser = async (req, res) => {
   try {
     const { fullName, email, password } = req.body;
 
-    // 1. VALIDATE
     const errorMessage = registerValidation({ fullName, email, password });
-    if (errorMessage) {
-      return res.status(400).json({ success: false, message: errorMessage });
-    }
+    if (errorMessage) return res.status(400).json({ success: false, message: errorMessage });
 
-    // 2. CHECK IF EMAIL EXISTS
     const normalizedEmail = email.toLowerCase();
-    const emailTaken = await User.findOne({ email:normalizedEmail });
+    const emailTaken = await User.findOne({ email: normalizedEmail });
+    if (emailTaken) return res.status(409).json({ success: false, message: `${emailTaken.email} is already registered` });
 
-    if (emailTaken) {
-      return res.status(409).json({
-        success: false,
-        message: `${emailTaken.email} is already registered`,
-      });
-    }
-
-    // 3. CREATE USER
-    await User.create({
-      fullName: fullName.toLowerCase(),
-      email: normalizedEmail,
-      password,
-    });
-
-    return res.status(201).json({
-      success: true,
-      message: `${fullName} user has been created`,
-    });
+    await User.create({ fullName: fullName.toLowerCase(), email: normalizedEmail, password });
+    return res.status(201).json({ success: true, message: `${fullName} user has been created` });
   } catch (error) {
-     if (error.code === 11000) {
-      return res.status(409).json({
-        success: false,
-        message: `${error} is already registered`,
-      });
-    }
-    return res.status(500).json({
-      success: false,
-      message: "Could not create the user",
-      error: error.message,
-    });
+    return res.status(500).json({ success: false, message: "Could not create the user", error: error.message });
   }
 };
 
-// loginUser
+// LOGIN
 const loginUser = async (req, res) => {
-  // recive login data
   const { email, password } = req.body;
+  if (!email.trim() || !password.trim()) return res.status(400).json({ success: false, message: "Email and password required" });
 
-  // validate input
-  if (!email.trim())
-    return res.status(400).json({
-      success: false,
-      message: "Email field can not be empty",
-    });
-
-  if (!password.trim())
-    return res.status(400).json({
-      success: false,
-      message: "Password field can not be empty",
-    });
-
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(email)) {
-    return res
-      .status(400)
-      .json({ success: false, message: "Invalid email format" });
-  }
-
-  if (password.length < 6)
-    return res.status(400).json({
-      message: "password must be 6 character",
-    });
-
-  // find user
   const isUser = await User.findOne({ email });
-  if (!isUser)
-    return res.status(404).json({
-      success: false,
-      message: "User Not Found",
-    });
+  if (!isUser) return res.status(404).json({ success: false, message: "User Not Found" });
 
-  // verify Password
   const verifyPassword = await isUser.isPasswordCorrect(password);
-  if (!verifyPassword)
-    return res.status(401).json({
-      success: false,
-      message: "Invalid credentials ",
-    });
+  if (!verifyPassword) return res.status(401).json({ success: false, message: "Invalid credentials" });
 
-  // generate token
   const accessToken = isUser.generateAccessToken();
   const refreshToken = isUser.generateRefreshToken();
 
-  // store refresh token
-  isUser.refreshTokens.push(refreshToken);
-  await isUser.save({ validateBeforeSave: false });
+  // Store refresh token in Redis
+  await redis.set(`refresh:${refreshToken}`, isUser._id.toString(), { EX: 7 * 24 * 60 * 60 });
 
-  // send token to clint
-  const option = {
-    httpOnly: true,
-    secure: true,
-    sameSite: "None",
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-  };
+  const cookieOptions = { httpOnly: true, secure: true, sameSite: "None", maxAge: 7 * 24 * 60 * 60 * 1000 };
+  res.cookie("accessToken", accessToken, cookieOptions);
+  res.cookie("refreshToken", refreshToken, cookieOptions);
 
-  res.cookie("accessToken", accessToken, option);
-  res.cookie("refreshToken", refreshToken, option);
-
-  // return response
-  return res.status(200).json({
-    success: true,
-    message: "Login Successful",
-    user: { userName: isUser.userName, id: isUser._id },
-  });
+  return res.status(200).json({ success: true, message: "Login Successful", user: { userName: isUser.userName, id: isUser._id } });
 };
 
-// logout
+// LOGOUT
 const logOut = async (req, res) => {
   try {
-    if (req.user?._id) {
-      await User.findByIdAndUpdate(req.user._id, {
-        $unset: { refreshTokens: "" },
-      });
+    const refreshToken = req.cookies.refreshToken;
+    if (refreshToken) await redis.del(`refresh:${refreshToken}`);
 
-      const option = {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
-      };
+    res.clearCookie("accessToken");
+    res.clearCookie("refreshToken");
 
-      res.clearCookie("accessToken", option);
-      res.clearCookie("refreshToken", option);
-
-      return res.status(200).json({
-        success: true,
-        message: "Logout successfull",
-      });
-    }
+    return res.status(200).json({ success: true, message: "Logout successful" });
   } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: "Error During logOut",
-      error: error.message,
-    });
+    return res.status(500).json({ success: false, message: "Error during logout", error: error.message });
   }
 };
 
-// forgot password
+// REFRESH TOKEN
+const refreshToken = async (req, res) => {
+  try {
+    const token = req.cookies.refreshToken;
+    if (!token) return res.status(401).json({ success: false, message: "No refresh token" });
+
+    const userId = await redis.get(`refresh:${token}`);
+    if (!userId) return res.status(403).json({ success: false, message: "Invalid refresh token" });
+
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ success: false, message: "User not found" });
+
+    const newAccessToken = user.generateAccessToken();
+    const newRefreshToken = user.generateRefreshToken();
+
+    await redis.del(`refresh:${token}`);
+    await redis.set(`refresh:${newRefreshToken}`, user._id.toString(), { EX: 7 * 24 * 60 * 60 });
+
+    res.cookie("accessToken", newAccessToken, { httpOnly: true, secure: true, sameSite: "None" });
+    res.cookie("refreshToken", newRefreshToken, { httpOnly: true, secure: true, sameSite: "None" });
+
+    return res.status(200).json({ success: true, message: "Token refreshed" });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: "Failed to refresh token", error: error.message });
+  }
+};
+
+// FORGOT PASSWORD
 const forgotPassword = async (req, res) => {
   try {
-    // recive data
-    const { newPassword, confirmPassword } = req.body;
+    const { email, newPassword } = req.body;
+    if (!email || !newPassword) return res.status(400).json({ success: false, message: "Email and new password required" });
 
-    // validate data
-    if (!newPassword || !confirmPassword)
-      return res.status(400).json({
-        success: false,
-        message: "Password field cannot be empty",
-      });
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ success: false, message: "User not found" });
 
-    // confirm  password
-    if (newPassword !== confirmPassword) {
-      return res.status(400).json({
-        success: false,
-        message: "Passwords do not match",
-      });
-    }
-
-    // Hash the new password
     const hashedPassword = await bcrypt.hash(newPassword, 10);
+    user.password = hashedPassword;
+    await user.save({ validateBeforeSave: false });
 
-    // update the data
-    await User.findByIdAndUpdate(req.user._id, {
-      $set: { password: hashedPassword },
-    });
-    return res.status(200).json({
-      success: true,
-      message: "Password is update successfully",
-    });
+    return res.status(200).json({ success: true, message: "Password updated successfully" });
   } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: "Not able to change password",
-      error: error.message,
-    });
+    return res.status(500).json({ success: false, message: "Failed to update password", error: error.message });
   }
 };
 
-// change password
+// CHANGE PASSWORD (Authenticated user)
 const changePassword = async (req, res) => {
   try {
-    // recive data
-    const { oldPassword, confirmPassword, newPassword } = req.body;
-
-    //  validate data
-    if (!oldPassword)
-      return res.status(400).json({
-        success: true,
-        message: "old Password field is cannot be empty",
-      });
-
-    if (!confirmPassword)
-      return res.status(400).json({
-        success: true,
-        message: "confirm Password field is cannot be empty",
-      });
-
-    if (!newPassword)
-      return res.status(400).json({
-        success: false,
-        message: "New Password field is cannot be empty",
-      });
-
-    // find User
+    const { oldPassword, newPassword } = req.body;
     const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ success: false, message: "User not found" });
 
-    // validate user
-    if (!user)
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
-
-    // match password
     const isMatch = await user.isPasswordCorrect(oldPassword);
-    if (!isMatch)
-      return res.status(400).json({
-        success: false,
-        message: "Old Password is incorrect",
-      });
+    if (!isMatch) return res.status(400).json({ success: false, message: "Old password incorrect" });
 
-    // Confirm new password match
-    if (newPassword !== confirmPassword) {
-      return res.status(400).json({
-        success: false,
-        message: "Passwords do not match",
-      });
-    }
-
-    // Hash new password
     const hashedPassword = await bcrypt.hash(newPassword, 10);
+    user.password = hashedPassword;
+    await user.save({ validateBeforeSave: false });
 
-    // Update password
-    await User.findByIdAndUpdate(req.user._id, {
-      $set: { password: hashedPassword },
-    });
-
-    return res.status(200).json({
-      success: true,
-      message: "Password changed successfully",
-    });
+    return res.status(200).json({ success: true, message: "Password changed successfully" });
   } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: "failed to change the password",
-      error: error.message,
-    });
+    return res.status(500).json({ success: false, message: "Failed to change password", error: error.message });
   }
 };
 
-// refresh token
-const refreshToken = async (req, res) => {
-  // try {
-  //   const { token } = req.body;
-  //   if (!token) {
-  //     return res.status(401).json({
-  //       success: false,
-  //       message: "Refresh token is required",
-  //     });
-  //   }
-  //   // Verify the refresh token
-  //   const decoded = jwt.verify(token, process.env.REFRESH_TOKEN_SECRET);
-  //   // Check if the user exists and token matches stored one
-  //   const user = await User.findById(decoded._id);
-  //   if (!user || user.refreshTokens !== token) {
-  //     return res.status(403).json({
-  //       success: false,
-  //       message: "Invalid refresh token",
-  //     });
-  //   }
-  //   // Generate a new refresh token and update DB
-  //   const newRefreshToken = user.generateRefreshToken();
-  //   user.refreshTokens.push(newRefreshToken);
-  //   await user.save();
-  //   return res.status(200).json({
-  //     success: true,
-  //     message: "token genrate sucessfuly"
-  //   });
-  // } catch (error) {
-  //   return res.status(403).json({
-  //     success: false,
-  //     message: "Invalid or expired refresh token",
-  //     error: error.message,
-  //   });
-  // }
-};
-
-export {
-  registerUser,
-  loginUser,
-  logOut,
-  forgotPassword,
-  changePassword,
-  refreshToken,
-};
+// EXPORT SECURELY
+export { registerUser, loginUser, logOut, forgotPassword, changePassword, refreshToken, };

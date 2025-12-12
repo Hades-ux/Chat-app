@@ -1,33 +1,22 @@
 import Message from "../Models/Message.Model.js";
 import Connection from "../Models/Connection.Model.js";
+import redis from "../redis.js";
 
+// CREATE MESSAGE
 const createMessage = async (req, res) => {
   try {
     const { message } = req.body;
 
-    if (!message) {
-      return res.status(400).json({
-        success: false,
-        message: "Message is required",
-      });
-    }
+    if (!message)
+      return res.status(400).json({ success: false, message: "Message is required" });
 
     const receiver = req.params.id;
-
-    if (!receiver) {
-      return res.status(400).json({
-        success: false,
-        message: "Receiver is required",
-      });
-    }
+    if (!receiver)
+      return res.status(400).json({ success: false, message: "Receiver is required" });
 
     const sender = req.user?._id;
-    if (!sender) {
-      return res.status(401).json({
-        success: false,
-        message: "Unauthorized user",
-      });
-    }
+    if (!sender)
+      return res.status(401).json({ success: false, message: "Unauthorized user" });
 
     // Create message
     const newMessage = await Message.create({
@@ -36,17 +25,23 @@ const createMessage = async (req, res) => {
       message,
     });
 
-    // Add sender to receiver's connection list — only AFTER sending message
-    // Safely update connections
+    // ⭐ Invalidate chat cache for both users
+    await redis.del(`chat:${sender}:${receiver}`);
+    await redis.del(`chat:${receiver}:${sender}`);
+
+    // ⭐ Invalidate last message cache
+    await redis.del(`lastmsg:${sender}`);
+    await redis.del(`lastmsg:${receiver}`);
+
+    // Add sender to receiver’s connection only if not present
     const connection = await Connection.findOne({ owner: receiver });
+
     if (!connection) {
-      // If no connection document exists, create one
       await Connection.create({
         owner: receiver,
         connection: [sender],
       });
     } else if (!connection.connection.includes(sender)) {
-      // Only add sender if not already in array
       connection.connection.push(sender);
       await connection.save();
     }
@@ -65,65 +60,41 @@ const createMessage = async (req, res) => {
   }
 };
 
-const markMessageAsRead = async (req, res) => {
-  try {
-    const sender = req.params.receiver_id;
-
-    if (!sender)
-      return res.status(401).json({
-        success: false,
-        message: "Unauthorized user",
-      });
-
-    const receiver = req.body._id;
-
-    if (!receiver)
-      return res.status(400).json({
-        success: false,
-        message: "user Not exist",
-      });
-
-    await Message.updateMany(
-      { sender, receiver, read: false },
-      { $set: { read: true } }
-    );
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: "Server error",
-      error: error.message,
-    });
-  }
-};
-
+// FETCH MESSAGES
 const fetchMessage = async (req, res) => {
   try {
     const sender = req.user?._id;
     if (!sender)
-      return res.status(400).json({
-        success: false,
-        message: "user  Not exist",
-      });
+      return res.status(400).json({ success: false, message: "User not found" });
 
     const { receiver } = req.query;
     if (!receiver)
-      return res.status(400).json({
-        success: false,
-        message: "receiver Not exist",
-      });
+      return res.status(400).json({ success: false, message: "Receiver not found" });
 
-    // Fetch chat between two users (both ways)
-    const message = await Message.find({
+    const cacheKey = `chat:${sender}:${receiver}`;
+
+    // Try Redis first
+    const cached = await redis.get(cacheKey);
+    if (cached) {
+      return res.status(200).json({
+        success: true,
+        fromCache: true,
+        data: JSON.parse(cached),
+      });
+    }
+
+    // Fetch from MongoDB
+    const messages = await Message.find({
       $or: [
         { sender: sender, receiver: receiver },
         { sender: receiver, receiver: sender },
       ],
     }).sort({ createdAt: 1 });
 
-    return res.status(200).json({
-      success: true,
-      data: message,
-    });
+    // Store in Redis
+    await redis.set(cacheKey, JSON.stringify(messages), { EX: 3600 });
+
+    return res.status(200).json({ success: true, data: messages });
   } catch (error) {
     return res.status(500).json({
       success: false,
@@ -133,21 +104,32 @@ const fetchMessage = async (req, res) => {
   }
 };
 
+//LAST MESSAGE LIST
 const getConnectionsWithLastMsg = async (req, res) => {
   try {
     const userId = req.user?._id;
 
-    const connectionDoc = await Connection.findOne({ owner: userId })
-      .populate("connection", "fullName")
-      .exec();
+    const cacheKey = `lastmsg:${userId}`;
 
-    if (!connectionDoc) {
-      return res.status(200).json({ success: true, data: [] });
+    // Check Redis cache first
+    const cached = await redis.get(cacheKey);
+    if (cached) {
+      return res.status(200).json({
+        success: true,
+        fromCache: true,
+        data: JSON.parse(cached),
+      });
     }
+
+    const connectionDoc = await Connection.findOne({ owner: userId })
+      .populate("connection", "fullName avatar email");
+
+    if (!connectionDoc)
+      return res.status(200).json({ success: true, data: [] });
 
     const connections = connectionDoc.connection;
 
-    // Use Promise.all to wait for all async operations
+    // Fetch last message for each user
     const results = await Promise.all(
       connections.map(async (conn) => {
         const lastMsg = await Message.findOne({
@@ -167,15 +149,20 @@ const getConnectionsWithLastMsg = async (req, res) => {
       })
     );
 
+    // Store in Redis (expires in 5 minutes)
+    await redis.set(cacheKey, JSON.stringify(results), { EX: 300 });
+
     return res.status(200).json({ success: true, data: results });
   } catch (err) {
-    return res.status(500).json({ success: false, message: err.message });
+    return res.status(500).json({
+      success: false,
+      message: err.message,
+    });
   }
 };
 
 export {
   createMessage,
-  markMessageAsRead,
   fetchMessage,
   getConnectionsWithLastMsg,
 };

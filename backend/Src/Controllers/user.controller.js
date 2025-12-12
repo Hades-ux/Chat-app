@@ -1,23 +1,40 @@
 import { fileUpload, deleteUpload } from "../Utils/cloudinary.js";
 import User from "../Models/User.Model.js";
-import redis from "../redis.js"
-// owner Profile
+import redis from "../redis.js";
+
+// OWNER PROFILE
 const ownerProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.user?._id).select(
-      "-password, -refreshToken"
-    );
+    const userId = req.user?._id;
+    const cacheKey = `user:${userId}:profile`;
+
+    // ⭐ 1. Try Redis cache
+    const cached = await redis.get(cacheKey);
+    if (cached) {
+      return res.status(200).json({
+        success: true,
+        fromCache: true,
+        user: JSON.parse(cached),
+      });
+    }
+
+    // ⭐ 2. Fetch from DB
+    const user = await User.findById(userId).select("-password -refreshToken");
+
     if (!user) {
       return res.status(400).json({
         success: false,
-        message: "User Not Find.",
+        message: "User Not Found.",
       });
     }
+
+    // ⭐ 3. Cache result
+    await redis.set(cacheKey, JSON.stringify(user), { EX: 3600 });
 
     return res.status(200).json({
       success: true,
       message: "User Found",
-      user
+      user,
     });
   } catch (error) {
     return res.status(500).json({
@@ -28,11 +45,23 @@ const ownerProfile = async (req, res) => {
   }
 };
 
-// user Profile
+// USER PROFILE
 const userProfile = async (req, res) => {
   try {
     const userId = req.params.id;
+    const cacheKey = `user:${userId}:profile`;
 
+    // Try Redis
+    const cached = await redis.get(cacheKey);
+    if (cached) {
+      return res.status(200).json({
+        success: true,
+        fromCache: true,
+        user: JSON.parse(cached),
+      });
+    }
+
+    // DB fetch
     const user = await User.findById(userId).select("-password -refreshToken");
     if (!user) {
       return res.status(404).json({
@@ -40,6 +69,9 @@ const userProfile = async (req, res) => {
         message: "User not found.",
       });
     }
+
+    // Cache result
+    await redis.set(cacheKey, JSON.stringify(user), { EX: 3600 });
 
     return res.status(200).json({
       success: true,
@@ -53,7 +85,7 @@ const userProfile = async (req, res) => {
   }
 };
 
-// updtae userName
+// UPDATE USERNAME
 const updateUserName = async (req, res) => {
   try {
     const { newUserName } = req.body;
@@ -61,7 +93,7 @@ const updateUserName = async (req, res) => {
     if (!newUserName)
       return res.status(400).json({
         success: false,
-        message: "User Name field can not be empty",
+        message: "User Name field cannot be empty",
       });
 
     const existingUser = await User.findOne({ userName: newUserName });
@@ -76,6 +108,9 @@ const updateUserName = async (req, res) => {
       $set: { userName: newUserName },
     });
 
+    // ⭐ Invalidate cache
+    await redis.del(`user:${req.user._id}:profile`);
+
     return res.status(200).json({
       success: true,
       message: `Username updated successfully to ${newUserName}`,
@@ -83,56 +118,50 @@ const updateUserName = async (req, res) => {
   } catch (error) {
     return res.status(500).json({
       success: false,
-      message: "internal server error",
+      message: "Internal server error",
       error: error.message,
     });
   }
 };
 
-// update Avatar
+// UPDATE AVATAR
 const UpdateUserAvatar = async (req, res) => {
   try {
-    // recive file
     const newAvatarPath = req.file?.path;
-
-    // validate file path
     if (!newAvatarPath)
       return res.status(400).json({
         success: false,
         message: "File not found",
       });
 
-    // upload file to Cloudinary
     const newAvatar = await fileUpload(newAvatarPath);
     if (!newAvatar)
       return res.status(400).json({
         success: false,
-        message: "Error during uploading Image",
+        message: "Error uploading image",
       });
 
-    // find User
     const user = await User.findById(req.user._id);
-
-    // validate user
     if (!user)
       return res.status(400).json({
         success: false,
-        message: "user not found",
+        message: "User not found",
       });
 
-    // delete file from cloudnry
+    // Delete old avatar
     if (user.avatar?.public_id) {
       await deleteUpload(user.avatar.public_id);
     }
 
-    // replace old data with new data
     await User.findByIdAndUpdate(req.user._id, {
       $set: {
         avatar: { url: newAvatar.secure_url, public_id: newAvatar.public_id },
       },
     });
 
-    // response
+    // Invalidate cache
+    await redis.del(`user:${req.user._id}:profile`);
+
     return res.status(200).json({
       success: true,
       message: "Avatar updated successfully",
@@ -146,7 +175,7 @@ const UpdateUserAvatar = async (req, res) => {
   }
 };
 
-// Update Email
+// UPDATE EMAIL
 const UpdateUserEmail = async (req, res) => {
   try {
     const { newUserEmail } = req.body;
@@ -154,20 +183,23 @@ const UpdateUserEmail = async (req, res) => {
     if (!newUserEmail)
       return res.status(400).json({
         success: false,
-        message: "Email filed cannot be empty",
+        message: "Email field cannot be empty",
       });
 
     const existingUser = await User.findOne({ email: newUserEmail });
-    if (existingUser) {
+    if (existingUser)
       return res.status(400).json({
         success: false,
         message: "Email already in use",
       });
-    }
 
     await User.findByIdAndUpdate(req.user._id, {
       $set: { email: newUserEmail },
     });
+
+    // Clear cache
+    await redis.del(`user:${req.user._id}:profile`);
+
     return res.status(200).json({
       success: true,
       message: `Email updated successfully to ${newUserEmail}`,
@@ -181,12 +213,18 @@ const UpdateUserEmail = async (req, res) => {
   }
 };
 
-// delet user
+// DELETE USER
 const deleteUser = async (req, res) => {
   try {
-    await User.findByIdAndDelete(req.user._id);
+    const userId = req.user._id;
+
+    await User.findByIdAndDelete(userId);
+
+    // ⭐ Delete cache
+    await redis.del(`user:${userId}:profile`);
+
     return res.status(200).json({
-      success: false,
+      success: true,
       message: "User deleted successfully",
     });
   } catch (error) {
@@ -198,11 +236,12 @@ const deleteUser = async (req, res) => {
   }
 };
 
+// USER ONLINE STATUS
 const userOnline = async (req, res) => {
   try {
     const userId = req.params.userId;
 
-     // Get online status from Redis
+    // Get online status from Redis
     const status = await redis.get(`user:${userId}:online`);
 
     return res.status(200).json({

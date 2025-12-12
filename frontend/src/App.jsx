@@ -11,9 +11,9 @@ const App = () => {
     <ChatProvider>
       <Routes>
         <Route path="/" element={<LogIn />} />
-        <Route path="/registerUser" element={<Register />} />
-        <Route path="/Home" element={<Home />} />
-        <Route path="/ForgotPassword" element={<Forgotpassword />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/home" element={<Home />} />
+        <Route path="/forgotpassword" element={<Forgotpassword />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </ChatProvider>
