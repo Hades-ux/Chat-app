@@ -11,34 +11,48 @@ import "dotenv/config";
 const registerUser = async (req, res) => {
   try {
     const { fullName, email, password } = req.body;
-    // const avatar = req.file;
+    const avatar = req.file;
 
     const errorMessage = registerValidation({ fullName, email, password });
-    if (errorMessage)
-      return res.status(400).json({ success: false, message: errorMessage });
+    if (errorMessage) {
+      return res.status(400).json({
+        success: false,
+        message: errorMessage,
+      });
+    }
 
     const normalizedEmail = email.toLowerCase();
+
     const emailTaken = await User.findOne({ email: normalizedEmail });
-    if (emailTaken)
+    if (emailTaken) {
       return res.status(409).json({
         success: false,
         message: `${emailTaken.email} is already registered`,
       });
+    }
 
-    // const avatarImg = await fileUpload(avatar);
-
-    await User.create({
+    // Base user data
+    const userData = {
       fullName: fullName.toLowerCase(),
       email: normalizedEmail,
       password,
-      // avatar: {
-      //   url: avatarImg.url,
-      //   public_id: avatarImg.public_id,
-      // },
+    };
+
+    //Only upload avatar if it exists
+    if (avatar) {
+      const avatarImg = await fileUpload(avatar.path);
+      userData.avatar = {
+        url: avatarImg.url,
+        public_id: avatarImg.public_id,
+      };
+    }
+
+    await User.create(userData);
+
+    return res.status(201).json({
+      success: true,
+      message: `${fullName} user has been created`,
     });
-    return res
-      .status(201)
-      .json({ success: true, message: `${fullName} user has been created` });
   } catch (error) {
     return res.status(500).json({
       success: false,
@@ -50,17 +64,17 @@ const registerUser = async (req, res) => {
 
 // send verified email
 const sendEmail = async (req, res) => {
-try {
-     const userId = req.user._id
+  try {
+    const userId = req.user._id;
 
-     if (!userId) {
+    if (!userId) {
       return res.status(400).json({
         success: false,
         message: "User not found",
       });
     }
 
-    const user = await User.findById(userId)
+    const user = await User.findById(userId);
 
     if (!user) {
       return res.status(404).json({
@@ -79,34 +93,32 @@ try {
     // Create verification token
     const token = jwt.sign(
       { userId: user._id, email: user.email },
-      "EMAIL_SECRET",
+      process.env.EMAIL_SECRET,
       { expiresIn: "15min" }
     );
 
-    console.log(token)
+    console.log(token);
 
-    const verifyLink = `http://localhost:9999/verifylink?userToken=${token}`;
+    const verifyLink = `${process.env.TEST}/verifylink?userToken=${token}`;
 
-    await verifyMail(verifyLink, user.email)
+    await verifyMail(verifyLink, user.email);
 
-     return res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: "Verification email sent successfully",
     });
-
-} catch (error) {
-  return res.status(500).json({
+  } catch (error) {
+    return res.status(500).json({
       success: false,
       message: "Failed to send verification email",
       error: error.message,
     });
-}
-}
+  }
+};
 
 // verifiy Email
 const verifyEmail = async (req, res) => {
   try {
-
     const { userToken } = req.query;
 
     if (!userToken) {
@@ -117,11 +129,11 @@ const verifyEmail = async (req, res) => {
     }
 
     // Verify token
-    const decoded = jwt.verify(userToken, "EMAIL_SECRET");
+    const decoded = jwt.verify(userToken, process.env.EMAIL_SECRET);
 
     // Find user
     const user = await User.findById(decoded.userId);
-    
+
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -144,7 +156,6 @@ const verifyEmail = async (req, res) => {
       success: true,
       message: "Email verified successfully",
     });
-
   } catch (error) {
     return res.status(401).json({
       success: false,

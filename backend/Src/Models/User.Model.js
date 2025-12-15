@@ -18,8 +18,8 @@ const userSchema = new mongoose.Schema(
     },
 
     avatar: {
-      url: { type: String, default: "" },
-      public_id: { type: String, default: "" },
+      url: { type: String,},
+      public_id: { type: String,},
     },
 
     email: {
@@ -57,7 +57,7 @@ userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
   try {
     // password hashing
-    this.password = await bcrypt.hash(this.password, 10);
+    this.password = bcrypt.hash(this.password, 10);
     next();
   } catch (error) {
     next(error);
