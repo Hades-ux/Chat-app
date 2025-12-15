@@ -4,3 +4,18 @@
 .input-box {
     @apply border border-gray-300 rounded-lg px-4 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-all duration-200 w-full;
 }
+
+.button {
+    @apply cursor-pointer text-xl rounded-sm p-2 text-white ;
+}
+
+.background {
+    @apply bg-gray-50 box-border h-screen w-screen flex justify-center items-center ;
+}
+.main-box {
+    @apply w-1/2 h-1/2 border  border-gray-300 rounded-xl p-4 shadow-2xl;
+}
+
+.heading {
+    @apply text-center mb-2 text-2xl font-semibold text-gray-600;
+}

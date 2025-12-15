@@ -4,6 +4,7 @@ import http from "http";
 import { Server } from "socket.io";
 import cors from "cors";
 import redis from "./Src/redis.js";
+import "dotenv/config";
 
 const PORT = process.env.PORT || 4444;
 const allowedOrigins = [

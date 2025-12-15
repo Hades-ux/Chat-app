@@ -125,7 +125,7 @@ const LogIn = () => {
           <p className="text-sm text-gray-500">
             Don't have an account?{" "}
             <NavLink
-              to="/registerUser"
+              to="/register"
               className={({ isActive }) =>
                 `text-sm hover:text-gray-800 ${
                   isActive ? "text-blue-500" : "text-gray-500"

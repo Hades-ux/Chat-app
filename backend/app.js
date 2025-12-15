@@ -1,9 +1,6 @@
 import express from "express";
-import { configDotenv } from "dotenv";
 import cookieParser from "cookie-parser";
 import cors from "cors";
-
-configDotenv();
 
 
 const app = express();
