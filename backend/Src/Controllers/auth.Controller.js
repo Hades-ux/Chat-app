@@ -4,12 +4,14 @@ import { registerValidation } from "../validation/auth.validation.js";
 import redis from "../redis.js";
 import { verifyMail } from "../verifyEmail.js";
 import { fileUpload } from "../Utils/cloudinary.js";
+import jwt from "jsonwebtoken";
+import "dotenv/config";
 
 // REGISTER
 const registerUser = async (req, res) => {
   try {
     const { fullName, email, password } = req.body;
-    const avatar = req.file
+    // const avatar = req.file;
 
     const errorMessage = registerValidation({ fullName, email, password });
     if (errorMessage)
@@ -18,40 +20,136 @@ const registerUser = async (req, res) => {
     const normalizedEmail = email.toLowerCase();
     const emailTaken = await User.findOne({ email: normalizedEmail });
     if (emailTaken)
-      return res
-        .status(409)
-        .json({
-          success: false,
-          message: `${emailTaken.email} is already registered`,
-        });
+      return res.status(409).json({
+        success: false,
+        message: `${emailTaken.email} is already registered`,
+      });
 
-        const avatarImg = await fileUpload(avatar);
+    // const avatarImg = await fileUpload(avatar);
 
-       const token = Math.floor(100000 + Math.random() * 900000);
-       await redis.del(`OTP:${normalizedEmail}`);
-       await redis.set(`OTP:${normalizedEmail}`, String(token),{EX:300})
-
-      await  verifyMail(token,normalizedEmail)
     await User.create({
       fullName: fullName.toLowerCase(),
       email: normalizedEmail,
       password,
-      avatar :{
-        url: avatarImg.url,
-        public_id: avatarImg.public_id
-      }
+      // avatar: {
+      //   url: avatarImg.url,
+      //   public_id: avatarImg.public_id,
+      // },
     });
     return res
       .status(201)
       .json({ success: true, message: `${fullName} user has been created` });
   } catch (error) {
-    return res
-      .status(500)
-      .json({
+    return res.status(500).json({
+      success: false,
+      message: "Could not create the user",
+      error: error.message,
+    });
+  }
+};
+
+// send verified email
+const sendEmail = async (req, res) => {
+try {
+     const userId = req.user._id
+
+     if (!userId) {
+      return res.status(400).json({
         success: false,
-        message: "Could not create the user",
-        error: error.message,
+        message: "User not found",
       });
+    }
+
+    const user = await User.findById(userId)
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    if (user.isVerified) {
+      return res.status(400).json({
+        success: false,
+        message: "Email already verified",
+      });
+    }
+
+    // Create verification token
+    const token = jwt.sign(
+      { userId: user._id, email: user.email },
+      "EMAIL_SECRET",
+      { expiresIn: "15min" }
+    );
+
+    console.log(token)
+
+    const verifyLink = `http://localhost:9999/verifylink?userToken=${token}`;
+
+    await verifyMail(verifyLink, user.email)
+
+     return res.status(200).json({
+      success: true,
+      message: "Verification email sent successfully",
+    });
+
+} catch (error) {
+  return res.status(500).json({
+      success: false,
+      message: "Failed to send verification email",
+      error: error.message,
+    });
+}
+}
+
+// verifiy Email
+const verifyEmail = async (req, res) => {
+  try {
+
+    const { userToken } = req.query;
+
+    if (!userToken) {
+      return res.status(400).json({
+        success: false,
+        message: "Verification token missing",
+      });
+    }
+
+    // Verify token
+    const decoded = jwt.verify(userToken, "EMAIL_SECRET");
+
+    // Find user
+    const user = await User.findById(decoded.userId);
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    // Already verified check (optional but good)
+    if (user.isVerified) {
+      return res.status(200).json({
+        success: true,
+        message: "Email already verified",
+      });
+    }
+
+    user.isVerified = true;
+    await user.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Email verified successfully",
+    });
+
+  } catch (error) {
+    return res.status(401).json({
+      success: false,
+      message: "Invalid or expired verification token",
+    });
   }
 };
 
@@ -63,7 +161,7 @@ const loginUser = async (req, res) => {
       .status(400)
       .json({ success: false, message: "Email and password required" });
 
-  const isUser = await User.findOne({ email });
+  const isUser = await User.findOne({ email }).select("+password");
   if (!isUser)
     return res.status(404).json({ success: false, message: "User Not Found" });
 
@@ -90,13 +188,11 @@ const loginUser = async (req, res) => {
   res.cookie("accessToken", accessToken, cookieOptions);
   res.cookie("refreshToken", refreshToken, cookieOptions);
 
-  return res
-    .status(200)
-    .json({
-      success: true,
-      message: "Login Successful",
-      user: { userName: isUser.userName, id: isUser._id },
-    });
+  return res.status(200).json({
+    success: true,
+    message: "Login Successful",
+    user: { userName: isUser.userName, id: isUser._id },
+  });
 };
 
 // LOGOUT
@@ -112,13 +208,11 @@ const logOut = async (req, res) => {
       .status(200)
       .json({ success: true, message: "Logout successful" });
   } catch (error) {
-    return res
-      .status(500)
-      .json({
-        success: false,
-        message: "Error during logout",
-        error: error.message,
-      });
+    return res.status(500).json({
+      success: false,
+      message: "Error during logout",
+      error: error.message,
+    });
   }
 };
 
@@ -164,13 +258,11 @@ const refreshToken = async (req, res) => {
 
     return res.status(200).json({ success: true, message: "Token refreshed" });
   } catch (error) {
-    return res
-      .status(500)
-      .json({
-        success: false,
-        message: "Failed to refresh token",
-        error: error.message,
-      });
+    return res.status(500).json({
+      success: false,
+      message: "Failed to refresh token",
+      error: error.message,
+    });
   }
 };
 
@@ -197,13 +289,11 @@ const forgotPassword = async (req, res) => {
       .status(200)
       .json({ success: true, message: "Password updated successfully" });
   } catch (error) {
-    return res
-      .status(500)
-      .json({
-        success: false,
-        message: "Failed to update password",
-        error: error.message,
-      });
+    return res.status(500).json({
+      success: false,
+      message: "Failed to update password",
+      error: error.message,
+    });
   }
 };
 
@@ -231,19 +321,19 @@ const changePassword = async (req, res) => {
       .status(200)
       .json({ success: true, message: "Password changed successfully" });
   } catch (error) {
-    return res
-      .status(500)
-      .json({
-        success: false,
-        message: "Failed to change password",
-        error: error.message,
-      });
+    return res.status(500).json({
+      success: false,
+      message: "Failed to change password",
+      error: error.message,
+    });
   }
 };
 
 // EXPORT SECURELY
 export {
   registerUser,
+  sendEmail,
+  verifyEmail,
   loginUser,
   logOut,
   forgotPassword,

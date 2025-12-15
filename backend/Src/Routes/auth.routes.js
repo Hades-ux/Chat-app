@@ -6,6 +6,8 @@ import {
   logOut,
   refreshToken,
   registerUser,
+  sendEmail,
+  verifyEmail,
 } from "../Controllers/auth.Controller.js";
 import { upload } from "../Middlewares/multer.Middleware.js";
 import { authMiddleware } from "../Middlewares/jwt.Middleware.js";
@@ -21,6 +23,12 @@ router.post(
   validate(registerValidation),
   registerUser
 );
+
+// send verify email
+router.post("/send-verify-email", authMiddleware, sendEmail)
+
+// verify email link
+router.get(`/verify-email`,verifyEmail )
 
 // Login user
 router.post("/login", loginUser);
