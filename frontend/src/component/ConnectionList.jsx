@@ -2,12 +2,12 @@ import { useEffect } from "react";
 import { useChat } from "../context/ChatContext";
 
 const ConnectionList = () => {
-  const { connections = [], fetchConnections, logout, selectUser, } = useChat();
+  const { connections = [], fetchConnections, logout, selectUser } = useChat();
 
   useEffect(() => {
     fetchConnections();
   }, []);
-  
+
   async function handleClick(receiver) {
     await selectUser(receiver);
   }
@@ -38,7 +38,17 @@ const ConnectionList = () => {
             {/* Avatar + online indicator */}
             <div className="relative w-12 h-12">
               <div className="w-full h-full rounded-full bg-gray-200 flex items-center justify-center text-gray-500 font-semibold text-xl">
-                {connection.fullName.charAt(0).toUpperCase()}
+                {connection.avatar.url ? (
+                  <img
+                    src={connection.avatar.url||""}
+                    alt={connection.fullName}
+                    className="w-full h-full object-cover rounded-full"
+                  />
+                ) : (
+                  <span className="text-gray-500 font-semibold text-xl">
+                    {connection.fullName.charAt(0).toUpperCase()}
+                  </span>
+                )}
               </div>
               {connection.online && (
                 <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></span>
@@ -48,7 +58,9 @@ const ConnectionList = () => {
             {/* Name + Last message */}
             <div className="flex flex-col flex-1">
               <div className="flex justify-between items-center">
-                <h2 className="font-semibold text-gray-800">{connection.fullName}</h2>
+                <h2 className="font-semibold text-gray-800">
+                  {connection.fullName}
+                </h2>
               </div>
               <p className="text-sm text-gray-500 truncate">
                 {connection.lastMessage || "No messages yet"}

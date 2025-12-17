@@ -6,9 +6,15 @@ import redis from "../redis.js";
 const ownerProfile = async (req, res) => {
   try {
     const userId = req.user?._id;
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized",
+      });
+    }
     const cacheKey = `user:${userId}:profile`;
 
-    // ⭐ 1. Try Redis cache
+    // Try Redis cache
     const cached = await redis.get(cacheKey);
     if (cached) {
       return res.status(200).json({
@@ -18,7 +24,7 @@ const ownerProfile = async (req, res) => {
       });
     }
 
-    // ⭐ 2. Fetch from DB
+    //Fetch from DB
     const user = await User.findById(userId).select("-password -refreshToken");
 
     if (!user) {
@@ -28,13 +34,13 @@ const ownerProfile = async (req, res) => {
       });
     }
 
-    // ⭐ 3. Cache result
+    //Cache result
     await redis.set(cacheKey, JSON.stringify(user), { EX: 3600 });
 
     return res.status(200).json({
       success: true,
       message: "User Found",
-      user,
+      data:user,
     });
   } catch (error) {
     return res.status(500).json({

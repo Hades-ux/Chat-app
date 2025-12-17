@@ -1,14 +1,12 @@
-import { useState, useRef, useEffect } from "react";
+import { useRef, useEffect } from "react";
 import { useChat } from "../context/ChatContext";
 import axios from "axios";
 
 const MessagePanel = () => {
-  const { selectedUser, messages, setMessages, sentMsg, setSentMsg, socket } =
+  const { selectedUser, messages, setMessages, sentMsg, setSentMsg,  socket, user } =
     useChat();
-  const [isTyping, setIsTyping] = useState(false);
-  const [typingTimeout, setTypingTimeout] = useState(null);
+
   const chatWindowRef = useRef(null);
-  const sender = localStorage.getItem("userId");
   const API = import.meta.env.VITE_API_URL;
 
   const scrollToBottom = () => {
@@ -18,68 +16,36 @@ const MessagePanel = () => {
     }
   };
 
-  useEffect(() => scrollToBottom(), [messages]);
-
-  const handleTyping = () => {
-    if (!selectedUser) return;
-
-    socket.emit("Typing", {
-      sender,
-      receiver: selectedUser._id,
-      isTyping: true,
-    });
-
-    if (typingTimeout) clearTimeout(typingTimeout);
-
-    const timeout = setTimeout(() => {
-      socket.emit("Typing", {
-        sender,
-        receiver: selectedUser._id,
-        isTyping: false,
-      });
-    }, 500);
-
-    setTypingTimeout(timeout);
-  };
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
   const handleSendMessage = async () => {
-    if (!sentMsg.trim()) return;
+    if (!sentMsg.trim() || !selectedUser) return;
 
     const messageData = {
-      sender,
+      sender:user._id,
       receiver: selectedUser._id,
       message: sentMsg,
     };
 
-    socket.emit("sendMessage", messageData);
-    setMessages((prev) => [...prev, messageData]);
-    setSentMsg("");
+    socket.emit("sendMessage", messageData)
 
-    await axios.post(
-      `${API}/message/create/${selectedUser._id}`,
-      messageData,
-      { withCredentials: true }
-    );
+    try {
+      const res = await axios.post(
+        `${API}/message/create/${selectedUser._id}`,
+        messageData,
+        { withCredentials: true }
+      );
+
+
+      // add ONLY the new message
+      setMessages((prev) => [...prev, res.data.data]);
+      setSentMsg("");
+    } catch (err) {
+      console.error("Send failed", err);
+    }
   };
-
-  useEffect(() => {
-    socket.on("receiveMessage", (data) => {
-      if (selectedUser && selectedUser._id === data.sender) {
-        setMessages((prev) => [...prev, data]);
-      }
-    });
-
-    socket.on("Typing", (data) => {
-      if (selectedUser && data.sender === selectedUser._id) {
-        setIsTyping(data.isTyping);
-      }
-    });
-
-    return () => {
-      socket.off("receiveMessage");
-      socket.off("Typing");
-    };
-  }, [selectedUser]);
 
   return (
     <div className="flex-1 flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden">
@@ -94,63 +60,57 @@ const MessagePanel = () => {
             <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center text-gray-600">
               {selectedUser.fullName.charAt(0)}
             </div>
-
-            <div>
-              <h2 className="text-xl font-semibold text-gray-800">
-                {selectedUser.fullName}
-              </h2>
-              {isTyping && (
-                <span className="text-sm text-gray-500">typing...</span>
-              )}
-            </div>
+            <h2 className="text-xl font-semibold text-gray-800">
+              {selectedUser.fullName}
+            </h2>
           </div>
 
-          {/* MESSAGE AREA */}
+          {/* MESSAGES */}
           <div
             ref={chatWindowRef}
             className="flex-1 p-4 overflow-y-auto bg-gray-50 flex flex-col gap-3"
           >
-            {messages.map((msg, i) => (
-              <div
-                key={i}
-                className={`flex ${
-                  msg.sender === sender
-                    ? "justify-end"
-                    : "justify-start"
-                }`}
-              >
+            {messages.map((msg, i) => {
+              const isMe =
+                msg.sender === user?._id;
+
+              return (
                 <div
-                  className={`px-4 py-2 rounded-2xl shadow-sm max-w-xs text-sm ${
-                    msg.sender === sender
-                      ? "bg-gray-700 text-white"
-                      : "bg-white text-gray-800 border border-gray-200"
+                  key={i}
+                  className={`flex ${
+                    isMe ? "justify-end" : "justify-start"
                   }`}
                 >
-                  {msg.message}
+                  <div
+                    className={`px-4 py-2 rounded-2xl shadow-sm max-w-xs text-sm ${
+                      isMe
+                        ? "bg-gray-700 text-white"
+                        : "bg-white text-gray-800 border border-gray-200"
+                    }`}
+                  >
+                    {msg.message}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
-          {/* INPUT AREA */}
+          {/* INPUT */}
           <div className="p-4 flex items-center gap-3 border-t bg-gray-100">
             <input
               type="text"
               placeholder="Type your message..."
               value={sentMsg}
-              onChange={(e) => {
-                setSentMsg(e.target.value);
-                handleTyping();
-              }}
+              onChange={(e) => setSentMsg(e.target.value)}
               onKeyDown={(e) =>
                 e.key === "Enter" && handleSendMessage()
               }
-              className="flex-1 border border-gray-300 rounded-full px-4 py-2 focus:ring-gray-500 focus:border-gray-500"
+              className="flex-1 border border-gray-300 rounded-full px-4 py-2"
             />
 
             <button
               onClick={handleSendMessage}
-              className="bg-gray-700 text-white px-5 py-2 rounded-full hover:bg-gray-800 transition"
+              className="bg-gray-700 text-white px-5 py-2 rounded-full hover:bg-gray-800"
             >
               Send
             </button>

@@ -25,11 +25,11 @@ const createMessage = async (req, res) => {
       message,
     });
 
-    // ⭐ Invalidate chat cache for both users
+    //Invalidate chat cache for both users
     await redis.del(`chat:${sender}:${receiver}`);
     await redis.del(`chat:${receiver}:${sender}`);
 
-    // ⭐ Invalidate last message cache
+    // Invalidate last message cache
     await redis.del(`lastmsg:${sender}`);
     await redis.del(`lastmsg:${receiver}`);
 

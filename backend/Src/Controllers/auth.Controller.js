@@ -236,11 +236,27 @@ const refreshToken = async (req, res) => {
         .status(401)
         .json({ success: false, message: "No refresh token" });
 
+       // Verify JWT
+    let decoded;
+    try {
+      decoded = jwt.verify(
+        token,
+        process.env.REFRESH_TOKEN_SECRET
+      );
+    } catch (err) {
+      return res.status(403).json({
+        success: false,
+        message: "Invalid or expired refresh token",
+      });
+    }
     const userId = await redis.get(`refresh:${token}`);
-    if (!userId)
-      return res
-        .status(403)
-        .json({ success: false, message: "Invalid refresh token" });
+
+   if (!userId || userId !== decoded._id) {
+      return res.status(403).json({
+        success: false,
+        message: "Refresh token mismatch",
+      });
+    }
 
     const user = await User.findById(userId);
     if (!user)
@@ -256,18 +272,13 @@ const refreshToken = async (req, res) => {
       EX: 7 * 24 * 60 * 60,
     });
 
-    res.cookie("accessToken", newAccessToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "None",
-    });
     res.cookie("refreshToken", newRefreshToken, {
       httpOnly: true,
       secure: true,
       sameSite: "None",
     });
 
-    return res.status(200).json({ success: true, message: "Token refreshed" });
+    return res.status(200).json({ success: true,  accessToken: newAccessToken, });
   } catch (error) {
     return res.status(500).json({
       success: false,

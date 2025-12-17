@@ -1,6 +1,6 @@
 import { io } from "socket.io-client";
 
-export const socket = io("https://chat-app-5sb9.onrender.com", {
+export const socket = io("http://localhost:9999", {
   transports: ["websocket","polling"],
   withCredentials: true,
 });

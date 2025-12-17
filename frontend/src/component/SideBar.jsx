@@ -91,7 +91,7 @@ const SideBar = () => {
                 placeholder="example@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="border-gray-300 focus:ring-gray-500 focus:border-gray-500 rounded-xl px-4 py-2 outline-none"
+                className="input-box"
               />
               <button
                 type="submit"
