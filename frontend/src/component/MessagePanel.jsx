@@ -3,7 +3,7 @@ import { useChat } from "../context/ChatContext";
 import axios from "axios";
 
 const MessagePanel = () => {
-  const { selectedUser, messages, setMessages, sentMsg, setSentMsg,  socket, user } =
+  const { selectedUser, messages, setMessages, sentMsg, setSentMsg, user } =
     useChat();
 
   const chatWindowRef = useRef(null);
@@ -16,6 +16,7 @@ const MessagePanel = () => {
     }
   };
 
+
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
@@ -24,12 +25,10 @@ const MessagePanel = () => {
     if (!sentMsg.trim() || !selectedUser) return;
 
     const messageData = {
-      sender:user._id,
+      sender: user,
       receiver: selectedUser._id,
       message: sentMsg,
     };
-
-    socket.emit("sendMessage", messageData)
 
     try {
       const res = await axios.post(
@@ -37,7 +36,6 @@ const MessagePanel = () => {
         messageData,
         { withCredentials: true }
       );
-
 
       // add ONLY the new message
       setMessages((prev) => [...prev, res.data.data]);
@@ -72,7 +70,7 @@ const MessagePanel = () => {
           >
             {messages.map((msg, i) => {
               const isMe =
-                msg.sender === user?._id;
+                msg.sender === user;
 
               return (
                 <div

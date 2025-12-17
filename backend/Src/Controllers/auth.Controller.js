@@ -172,23 +172,23 @@ const loginUser = async (req, res) => {
       .status(400)
       .json({ success: false, message: "Email and password required" });
 
-  const isUser = await User.findOne({ email }).select("+password");
-  if (!isUser)
+  const user = await User.findOne({ email }).select("+password");
+  if (!user)
     return res.status(404).json({ success: false, message: "User Not Found" });
 
-  const verifyPassword = await isUser.isPasswordCorrect(password);
+  const verifyPassword = await user.isPasswordCorrect(password);
   if (!verifyPassword)
     return res
       .status(401)
       .json({ success: false, message: "Invalid credentials" });
 
-  const accessToken = isUser.generateAccessToken();
-  const refreshToken = isUser.generateRefreshToken();
+  const accessToken = user.generateAccessToken();
+  const refreshToken = user.generateRefreshToken();
 
   // Store refresh token in Redis
-  await redis.set(`refresh:${refreshToken}`, isUser._id.toString(), {
-    EX: 7 * 24 * 60 * 60,
-  });
+  // await redis.set(`refresh:${refreshToken}`, isUser._id.toString(), {
+  //   EX: 7 * 24 * 60 * 60,
+  // });
 
   const cookieOptions = {
     httpOnly: true,
@@ -202,7 +202,11 @@ const loginUser = async (req, res) => {
   return res.status(200).json({
     success: true,
     message: "Login Successful",
-    user: { userName: isUser.userName, id: isUser._id },
+    data: {
+      _id: user._id,
+      fullName: user.fullName,
+      email: user.email,
+      avatar: user.avatar,}
   });
 };
 

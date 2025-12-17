@@ -2,6 +2,7 @@ import { useState } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { NavLink, useNavigate } from "react-router-dom";
+import { useChat } from "../context/ChatContext";
 
 const LogIn = () => {
   const API = import.meta.env.VITE_API_URL;
@@ -10,6 +11,7 @@ const LogIn = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const { setUser } = useChat();
   const [loading, setLoading] = useState(false);
 
   async function handleOnSumbit(e) {
@@ -25,13 +27,10 @@ const LogIn = () => {
         { withCredentials: true }
       );
 
-      const data = response.data;
+      const user = response.data.data._id;
+      setUser(user);
 
       toast.success("Login Successfull");
-
-      if (data?.user?.id) {
-       localStorage.setItem("user", data.user.id);
-      }
       navigate("/home");
     } catch (error) {
       toast.error(error.response?.data?.message || "Login failed!");

@@ -37,11 +37,6 @@ const io = new Server(server, {
 io.on("connection", async (socket) => {
   console.log(" NEW CLIENT CONNECTED:", socket.id);
 
-
-  socket.on("sendMessage", (data) => {
-    console.log("recive msg:",data)
-  })
-
   // ON DISCONNECT
   socket.on("disconnect", async () => {
     console.log(" CLIENT DISCONNECTED:", socket.id);

@@ -15,23 +15,6 @@ export const ChatProvider = ({ children }) => {
   const [messages, setMessages] = useState([]);
   const [sentMsg, setSentMsg] = useState("");
 
-  //fetch user data
-      useEffect(() => {
-        const fetchUser = async () => {
-            try {
-              const data = await axios.get(`${API}/user/owner/profile`, {withCredentials: true})
-              if(!data) return toast.error("user Not Found")
-               const  sender = data.data.user
-                setUser(sender)
-              console.log("Sender: ",sender)
-            } catch (error) {
-              toast.error("Failed to fetchh user data");
-            }
-        }
-
-        fetchUser()
-
-      },[])
   // fetch connections
   const fetchConnections = async () => {
     try {
@@ -106,23 +89,6 @@ export const ChatProvider = ({ children }) => {
     }
   };
 
-  useEffect(() => {
-    socket.connect()
-    socket.on("connect", () => {
-    });
-
-    socket.on("disconnect", () => {
-      console.log("socket disonnected");
-    });
-
-    return () => {
-      socket.off("connect");
-      socket.off("disconnect")
-      socket.disconnect()
-    }
-
-  }, []);
-
   return (
     <ChatContext.Provider
       value={{
@@ -137,8 +103,8 @@ export const ChatProvider = ({ children }) => {
         sentMsg,
         setSentMsg,
         selectUser,
-        socket, 
-        user
+        user,
+        setUser
       }}
     >
       {children}
