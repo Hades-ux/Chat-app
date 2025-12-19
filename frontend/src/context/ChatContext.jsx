@@ -9,11 +9,28 @@ const ChatContext = createContext();
 
 export const ChatProvider = ({ children }) => {
   const navigate = useNavigate();
-  const [user, setUser] = useState("")
+  const [user, setUser] = useState(null);
   const [connections, setConnections] = useState([]);
-  const [selectedUser, setSelectedUser] = useState(null);
+  const [selectedUser, setSelectedUser] = useState("");
   const [messages, setMessages] = useState([]);
   const [sentMsg, setSentMsg] = useState("");
+
+  // refresh fetch
+  useEffect(() => {
+    const fetch = async () => {
+    try {
+        const res = await axios.get(`${API}/user/owner/profile`, {
+          withCredentials: true,
+        });
+        const refresh = res.data.data
+        setUser(refresh)
+    } catch (error) {
+      setUser(null)
+    }
+    };
+
+    fetch();
+  },[]);
 
   // fetch connections
   const fetchConnections = async () => {
@@ -89,6 +106,25 @@ export const ChatProvider = ({ children }) => {
     }
   };
 
+  useEffect(() => {
+    if (!user) return;
+    if (socket.connected) return;
+    socket.connect()
+
+    socket.on("connect", () => {
+      socket.emit("setup", user);
+    });
+
+    socket.on("connect_error", (err) => {
+      console.error("Socket error:", err.message);
+    });
+
+    return () => {
+      socket.off("connect");
+      socket.off("connect_error");
+    };
+  }, [user]);
+
   return (
     <ChatContext.Provider
       value={{
@@ -104,7 +140,8 @@ export const ChatProvider = ({ children }) => {
         setSentMsg,
         selectUser,
         user,
-        setUser
+        setUser,
+        socket,
       }}
     >
       {children}

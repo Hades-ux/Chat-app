@@ -3,32 +3,67 @@ import { useChat } from "../context/ChatContext";
 import axios from "axios";
 
 const MessagePanel = () => {
-  const { selectedUser, messages, setMessages, sentMsg, setSentMsg, user } =
-    useChat();
+  const {
+    selectedUser,
+    messages,
+    setMessages,
+    sentMsg,
+    setSentMsg,
+    user,
+    socket,
+  } = useChat();
 
   const chatWindowRef = useRef(null);
   const API = import.meta.env.VITE_API_URL;
 
   const scrollToBottom = () => {
     if (chatWindowRef.current) {
-      chatWindowRef.current.scrollTop =
-        chatWindowRef.current.scrollHeight;
+      chatWindowRef.current.scrollTop = chatWindowRef.current.scrollHeight;
     }
   };
-
 
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
+  // reciver msg
+  useEffect(() => {
+    if(!socket) return
+    socket.on("receiveMessage", (msg) => {
+      setMessages((perv) => [...perv, msg]);
+    });
+    return () => {
+      socket.off("receiveMessage");
+    };
+  }, [socket]);
+
+  useEffect(() => {
+    if (!user || !selectedUser || !socket) return;
+    const chatId = [user, selectedUser._id].sort().join("_");
+
+    socket.emit("joinRoom", chatId);
+
+    return () => {
+      socket.emit("leaveRoom", chatId);
+    };
+  }, [user, socket, selectedUser]);
+
   const handleSendMessage = async () => {
     if (!sentMsg.trim() || !selectedUser) return;
-
+    const chatId = [user, selectedUser._id].sort().join("_");
     const messageData = {
       sender: user,
       receiver: selectedUser._id,
       message: sentMsg,
+      chatId,
     };
+
+    socket.emit("sendMessage", {
+      sender: user,
+      receiver: selectedUser._id,
+      message: sentMsg,
+      chatId
+    });
 
     try {
       const res = await axios.post(
@@ -38,7 +73,7 @@ const MessagePanel = () => {
       );
 
       // add ONLY the new message
-      setMessages((prev) => [...prev, res.data.data]);
+      // setMessages((prev) => [...prev, res.data.data]);
       setSentMsg("");
     } catch (err) {
       console.error("Send failed", err);
@@ -56,7 +91,17 @@ const MessagePanel = () => {
           {/* HEADER */}
           <div className="p-4 border-b bg-gray-100 flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center text-gray-600">
-              {selectedUser.fullName.charAt(0)}
+              {selectedUser.avatar.url ? (
+                <img
+                  src={selectedUser.avatar.url || ""}
+                  alt={selectedUser.fullName}
+                  className="w-full h-full object-cover rounded-full"
+                />
+              ) : (
+                <span className="text-gray-500 font-semibold text-xl">
+                  {selectedUser.fullName.charAt(0).toUpperCase()}
+                </span>
+              )}
             </div>
             <h2 className="text-xl font-semibold text-gray-800">
               {selectedUser.fullName}
@@ -69,15 +114,12 @@ const MessagePanel = () => {
             className="flex-1 p-4 overflow-y-auto bg-gray-50 flex flex-col gap-3"
           >
             {messages.map((msg, i) => {
-              const isMe =
-                msg.sender === user;
+              const isMe = msg.sender === user;
 
               return (
                 <div
                   key={i}
-                  className={`flex ${
-                    isMe ? "justify-end" : "justify-start"
-                  }`}
+                  className={`flex ${isMe ? "justify-end" : "justify-start"}`}
                 >
                   <div
                     className={`px-4 py-2 rounded-2xl shadow-sm max-w-xs text-sm ${
@@ -100,9 +142,7 @@ const MessagePanel = () => {
               placeholder="Type your message..."
               value={sentMsg}
               onChange={(e) => setSentMsg(e.target.value)}
-              onKeyDown={(e) =>
-                e.key === "Enter" && handleSendMessage()
-              }
+              onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
               className="flex-1 border border-gray-300 rounded-full px-4 py-2"
             />
 

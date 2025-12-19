@@ -12,17 +12,6 @@ const ownerProfile = async (req, res) => {
         message: "Unauthorized",
       });
     }
-    const cacheKey = `user:${userId}:profile`;
-
-    // Try Redis cache
-    const cached = await redis.get(cacheKey);
-    if (cached) {
-      return res.status(200).json({
-        success: true,
-        fromCache: true,
-        user: JSON.parse(cached),
-      });
-    }
 
     //Fetch from DB
     const user = await User.findById(userId).select("-password -refreshToken");
@@ -34,19 +23,15 @@ const ownerProfile = async (req, res) => {
       });
     }
 
-    //Cache result
-    await redis.set(cacheKey, JSON.stringify(user), { EX: 3600 });
-
     return res.status(200).json({
       success: true,
       message: "User Found",
-      data:user,
+      data:user?._id,
     });
   } catch (error) {
-    return res.status(500).json({
+    return res.status(401).json({
       success: false,
-      message: "Internal server error",
-      error: error.message,
+       message: "Not authenticated",
     });
   }
 };
