@@ -107,7 +107,7 @@ export const ChatProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    if (!user) return;
+    if (!socket || !user) return;
     if (socket.connected) return;
     socket.connect()
 

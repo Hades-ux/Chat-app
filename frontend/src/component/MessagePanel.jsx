@@ -1,6 +1,7 @@
 import { useRef, useEffect } from "react";
 import { useChat } from "../context/ChatContext";
 import axios from "axios";
+import { useState } from "react";
 
 const MessagePanel = () => {
   const {
@@ -13,8 +14,23 @@ const MessagePanel = () => {
     socket,
   } = useChat();
 
+  const [typing, setTyping] = useState(false);
+  const [online, setOnline] = useState(false);
   const chatWindowRef = useRef(null);
+  const typingTimeout = useRef(null);
+  const isTyping = useRef(false);
   const API = import.meta.env.VITE_API_URL;
+  const handleUserOnline = (userId) => {
+  if (userId === selectedUser._id) {
+    setOnline(true);
+  }
+};
+
+const handleUserOffline = (userId) => {
+  if (userId === selectedUser._id) {
+    setOnline(false);
+  }
+};
 
   const scrollToBottom = () => {
     if (chatWindowRef.current) {
@@ -26,9 +42,48 @@ const MessagePanel = () => {
     scrollToBottom();
   }, [messages]);
 
-  // reciver msg
   useEffect(() => {
-    if(!socket) return
+  return () => {
+    if (typingTimeout.current) {
+      clearTimeout(typingTimeout.current);
+    }
+  };
+}, []);
+
+
+  useEffect(() => {
+    if (!socket) return;
+
+    socket.on("userTyping", () => {
+      setTyping(true);
+    });
+
+    socket.on("userStoppedTyping", () => {
+      setTyping(false);
+    });
+
+    return () => {
+      socket.off("userTyping");
+      socket.off("userStoppedTyping");
+    };
+  }, [socket]);
+
+  // set online indictor
+  useEffect(() => {
+      if (!socket || !selectedUser) return;
+
+  socket.on("userOnline", handleUserOnline);
+  socket.on("userOffline", handleUserOffline);
+
+  return () => {
+    socket.off("userOnline", handleUserOnline);
+    socket.off("userOffline", handleUserOffline);
+  };
+  }, [socket, selectedUser]);
+
+  // reciver msg through socket
+  useEffect(() => {
+    if (!socket) return;
     socket.on("receiveMessage", (msg) => {
       setMessages((perv) => [...perv, msg]);
     });
@@ -36,6 +91,27 @@ const MessagePanel = () => {
       socket.off("receiveMessage");
     };
   }, [socket]);
+
+  // typing indicator
+  const handleTyping = () => {
+    if (!user || !selectedUser || !socket) return;
+
+    const chatId = [user, selectedUser._id].sort().join("_");
+
+    if (!isTyping.current) {
+      socket.emit("typing", chatId);
+      isTyping.current = true;
+    }
+
+    if (typingTimeout.current) {
+      clearTimeout(typingTimeout.current);
+    }
+
+    typingTimeout.current = setTimeout(() => {
+      socket.emit("noTyping", chatId);
+      isTyping.current = false;
+    }, 1000);
+  };
 
   useEffect(() => {
     if (!user || !selectedUser || !socket) return;
@@ -51,6 +127,10 @@ const MessagePanel = () => {
   const handleSendMessage = async () => {
     if (!sentMsg.trim() || !selectedUser) return;
     const chatId = [user, selectedUser._id].sort().join("_");
+
+    socket.emit("noTyping", chatId);
+    isTyping.current = false;
+
     const messageData = {
       sender: user,
       receiver: selectedUser._id,
@@ -62,7 +142,7 @@ const MessagePanel = () => {
       sender: user,
       receiver: selectedUser._id,
       message: sentMsg,
-      chatId
+      chatId,
     });
 
     try {
@@ -71,9 +151,6 @@ const MessagePanel = () => {
         messageData,
         { withCredentials: true }
       );
-
-      // add ONLY the new message
-      // setMessages((prev) => [...prev, res.data.data]);
       setSentMsg("");
     } catch (err) {
       console.error("Send failed", err);
@@ -101,11 +178,17 @@ const MessagePanel = () => {
                 <span className="text-gray-500 font-semibold text-xl">
                   {selectedUser.fullName.charAt(0).toUpperCase()}
                 </span>
-              )}
+              )}{" "}
             </div>
             <h2 className="text-xl font-semibold text-gray-800">
               {selectedUser.fullName}
-            </h2>
+            </h2>{" "}
+            {typing && (
+              <span className="text-sm text-gray-500 ml-2">typing...</span>
+            )}
+            {online && (
+              <span className=" h-2 w-2 rounded-full bg-green-600"></span>
+            )}
           </div>
 
           {/* MESSAGES */}
@@ -141,7 +224,10 @@ const MessagePanel = () => {
               type="text"
               placeholder="Type your message..."
               value={sentMsg}
-              onChange={(e) => setSentMsg(e.target.value)}
+              onChange={(e) => {
+                setSentMsg(e.target.value);
+                handleTyping();
+              }}
               onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
               className="flex-1 border border-gray-300 rounded-full px-4 py-2"
             />
