@@ -18,19 +18,19 @@ export const ChatProvider = ({ children }) => {
   // refresh fetch
   useEffect(() => {
     const fetch = async () => {
-    try {
+      try {
         const res = await axios.get(`${API}/user/owner/profile`, {
           withCredentials: true,
         });
-        const refresh = res.data.data
-        setUser(refresh)
-    } catch (error) {
-      setUser(null)
-    }
+        const refresh = res.data.data;
+        setUser(refresh);
+      } catch (error) {
+        setUser(null);
+      }
     };
 
     fetch();
-  },[]);
+  }, []);
 
   // fetch connections
   const fetchConnections = async () => {
@@ -80,11 +80,15 @@ export const ChatProvider = ({ children }) => {
         {},
         { withCredentials: true }
       );
+      if (socket?.connected) {
+        socket.disconnect();
+      }
+      localStorage.removeItem("token");
+      setUser(null);
       toast.success(res.data.message);
+      navigate("/");
     } catch {
       toast.error("Logout failed");
-    } finally {
-      navigate("/");
     }
   };
 
@@ -108,22 +112,29 @@ export const ChatProvider = ({ children }) => {
 
   useEffect(() => {
     if (!socket || !user) return;
-    if (socket.connected) return;
-    socket.connect()
+    if (!socket.connected) {
+      socket.connect();
+    }
 
-    socket.on("connect", () => {
+    if (socket.connected) {
       socket.emit("setup", user);
-    });
+    }
+
+    const onConnect = () => {
+      socket.emit("setup", user);
+    };
+
+    socket.on("connect", onConnect);
 
     socket.on("connect_error", (err) => {
       console.error("Socket error:", err.message);
     });
 
     return () => {
-      socket.off("connect");
+      socket.off("connect", onConnect);
       socket.off("connect_error");
     };
-  }, [user]);
+  }, [user, socket]);
 
   return (
     <ChatContext.Provider

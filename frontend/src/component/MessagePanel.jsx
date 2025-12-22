@@ -20,17 +20,18 @@ const MessagePanel = () => {
   const typingTimeout = useRef(null);
   const isTyping = useRef(false);
   const API = import.meta.env.VITE_API_URL;
-  const handleUserOnline = (userId) => {
-  if (userId === selectedUser._id) {
-    setOnline(true);
-  }
-};
 
-const handleUserOffline = (userId) => {
-  if (userId === selectedUser._id) {
-    setOnline(false);
-  }
-};
+  const handleUserOnline = (userId) => {
+    if (userId === selectedUser._id) {
+      setOnline(true);
+    }
+  };
+
+  const handleUserOffline = (userId) => {
+    if (userId === selectedUser._id) {
+      setOnline(false);
+    }
+  };
 
   const scrollToBottom = () => {
     if (chatWindowRef.current) {
@@ -43,13 +44,21 @@ const handleUserOffline = (userId) => {
   }, [messages]);
 
   useEffect(() => {
-  return () => {
-    if (typingTimeout.current) {
-      clearTimeout(typingTimeout.current);
-    }
-  };
-}, []);
+    if (!socket || !selectedUser) return;
+    socket.emit("getOnlineUser", selectedUser._id);
 
+    return ()=>{
+      socket.off("getOnlineUser")
+    }
+  }, [socket, selectedUser]);
+
+  useEffect(() => {
+    return () => {
+      if (typingTimeout.current) {
+        clearTimeout(typingTimeout.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (!socket) return;
@@ -70,15 +79,15 @@ const handleUserOffline = (userId) => {
 
   // set online indictor
   useEffect(() => {
-      if (!socket || !selectedUser) return;
+    if (!socket || !selectedUser) return;
 
-  socket.on("userOnline", handleUserOnline);
-  socket.on("userOffline", handleUserOffline);
+    socket.on("userOnline", handleUserOnline);
+    socket.on("userOffline", handleUserOffline);
 
-  return () => {
-    socket.off("userOnline", handleUserOnline);
-    socket.off("userOffline", handleUserOffline);
-  };
+    return () => {
+      socket.off("userOnline", handleUserOnline);
+      socket.off("userOffline", handleUserOffline);
+    };
   }, [socket, selectedUser]);
 
   // reciver msg through socket
@@ -186,8 +195,12 @@ const handleUserOffline = (userId) => {
             {typing && (
               <span className="text-sm text-gray-500 ml-2">typing...</span>
             )}
-            {online && (
-              <span className=" h-2 w-2 rounded-full bg-green-600"></span>
+            {(
+              <span
+                className={`h-2 w-2 rounded-full ${
+                  online ? "bg-green-600" : "bg-gray-400"
+                }`}
+              ></span>
             )}
           </div>
 
