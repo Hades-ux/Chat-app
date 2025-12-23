@@ -7,7 +7,7 @@ import redis from "./Src/redis.js";
 import "dotenv/config";
 
 const PORT = process.env.PORT || 4444;
-const allowedOrigins = ["http://localhost:5173"];
+const allowedOrigins = process.env.PROD_CLIENT;
 
 // Connect database & Redis
 await redis.connect();
