@@ -6,7 +6,7 @@ import cors from "cors";
 const app = express();
 app.use(
    cors({
-    origin: "process.env.PROD_CLIENT",
+    origin: "https://chat-app-six-delta-19.vercel.app",
     credentials: true,
   })
 )
