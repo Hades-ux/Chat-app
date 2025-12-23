@@ -7,7 +7,10 @@ import redis from "./Src/redis.js";
 import "dotenv/config";
 
 const PORT = process.env.PORT || 4444;
-const allowedOrigins = "https://chat-app-six-delta-19.vercel.app";
+const allowedOrigins = [
+  process.env.DEV_CLIENT,
+  process.env.PROD_CLIENT,
+];
 
 // Connect database & Redis
 await redis.connect();
@@ -15,10 +18,20 @@ await connectDB();
 
 app.use(
   cors({
-    origin: allowedOrigins,
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true); // Postman / mobile
+
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      callback(new Error(`CORS blocked: ${origin}`));
+    },
     credentials: true,
   })
 );
+
+app.options("*", cors());
 
 const server = http.createServer(app);
 const onlineUsers = new Set();
@@ -26,7 +39,15 @@ const onlineUsers = new Set();
 // initialize socket.io
 const io = new Server(server, {
   cors: {
-    origin: allowedOrigins,
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      callback(new Error("Not allowed by CORS"));
+    },
     methods: ["GET", "POST"],
     credentials: true,
   },

@@ -5,8 +5,16 @@ import cors from "cors";
 
 const app = express();
 app.use(
-   cors({
-    origin: "https://chat-app-six-delta-19.vercel.app",
+  cors({
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      callback(new Error(`CORS blocked: ${origin}`));
+    },
     credentials: true,
   })
 )
