@@ -5,7 +5,7 @@ const Profile = () => {
 
   if (!owner) {
     return (
-      <div className="p-6 text-gray-500 text-center">
+      <div className="flex items-center justify-center h-full text-gray-500">
         Loading profile...
       </div>
     );
@@ -17,65 +17,54 @@ const Profile = () => {
     owner?.email?.charAt(0)?.toUpperCase();
 
   return (
-    <div className="h-full w-full bg-gray-100 p-6">
-      
-      {/* Card */}
-      <div className="max-w-md mx-auto bg-white rounded-xl shadow-md p-6">
-        
-        {/* Header */}
-        <h2 className="text-xl font-semibold text-gray-800 mb-6 text-center">
-          Profile
-        </h2>
-
+    <div className="h-full w-full bg-gray-100">
+      {/* Top Section */}
+      <div className="bg-white px-6 pt-8 pb-6 flex flex-col items-center">
         {/* Avatar */}
-        <div className="flex justify-center mb-4">
-          <div className="w-28 h-28 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
-            {avatarUrl ? (
-              <img
-                src={avatarUrl}
-                alt={owner.fullName || "Avatar"}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <span className="text-3xl font-semibold text-gray-600">
-                {firstChar}
-              </span>
-            )}
-          </div>
+        <div className="w-32 h-32 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden mb-4">
+          {avatarUrl ? (
+            <img
+              src={avatarUrl}
+              alt={owner.fullName || "Avatar"}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <span className="text-4xl font-semibold text-gray-600">
+              {firstChar}
+            </span>
+          )}
         </div>
-
-        {/* Name */}
-        <p className="text-lg font-medium text-gray-800 text-center">
-          {owner.fullName}
-        </p>
 
         {/* Verification */}
         <p
-          className={`text-sm text-center mt-1 ${
-            owner.isVerified ? "text-green-600" : "text-red-500"
+          className={`text-sm mt-1 ${
+            owner.isVerified ? "text-green-600" : "text-gray-500"
           }`}
         >
-          {owner.isVerified ? "Verified Account" : "Not Verified"}
+          {owner.isVerified ? "Verified account" : "Not verified"}
         </p>
+      </div>
 
-        {/* Divider */}
-        <hr className="my-5" />
-
-        {/* Details */}
-        <div className="space-y-3 text-sm text-gray-600">
-          <div className="flex justify-between">
-            <span>Email</span>
-            <span className="text-gray-800">{owner.email}</span>
-          </div>
-
-          <div className="flex justify-between">
-            <span>Joined</span>
-            <span className="text-gray-800">
-              {new Date(owner.createdAt).toLocaleDateString()}
-            </span>
-          </div>
+      {/* Info Section */}
+      <div className="mt-3 bg-white">
+        {/* Name */}
+        <div className="px-6 py-4 border-b border-gray-200">
+          <p className="text-xs text-gray-500 mb-1">Name</p>
+        <p className="text-xl font-medium text-gray-900">{owner.fullName}</p>
+        </div>
+        {/* Email */}
+        <div className="px-6 py-4 border-b border-gray-200">
+          <p className="text-xs text-gray-500 mb-1">Email</p>
+          <p className="text-gray-900">{owner.email}</p>
         </div>
 
+        {/* Joined Date */}
+        <div className="px-6 py-4">
+          <p className="text-xs text-gray-500 mb-1">Joined</p>
+          <p className="text-gray-900">
+            {new Date(owner.createdAt).toLocaleDateString()}
+          </p>
+        </div>
       </div>
     </div>
   );

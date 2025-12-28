@@ -5,6 +5,7 @@ import PanelShell from "../component/modal/panels/PanelShell.jsx";
 import { useChat } from "../context/ChatContext.jsx";
 import { PANELS } from "../context/Panel.js";
 import Profile from "../component/Profile.jsx";
+import Setting from "../component/Setting.jsx";
 
 const Home = () => {
   const { activePanel } = useChat();
@@ -15,17 +16,17 @@ const Home = () => {
       <SideBar />
 
       {/* Middle panel */}
-      <PanelShell
-        visible={PANELS.CONNECTION_LIST === activePanel}
-      >
+      <PanelShell visible={PANELS.CONNECTION_LIST === activePanel}>
         <ConnectionList />
       </PanelShell>
 
-      <PanelShell 
-      visible={PANELS.USER_PROFILE === activePanel}>
-        <Profile/>
+      <PanelShell visible={PANELS.USER_PROFILE === activePanel}>
+        <Profile />
       </PanelShell>
 
+      <PanelShell visible={PANELS.SETTINGS === activePanel}>
+        <Setting />
+      </PanelShell>
 
       {/* Right panel */}
       <MessagePanel />
