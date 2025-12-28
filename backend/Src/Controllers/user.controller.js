@@ -27,6 +27,7 @@ const ownerProfile = async (req, res) => {
       success: true,
       message: "User Found",
       data:user?._id,
+      user
     });
   } catch (error) {
     return res.status(401).json({

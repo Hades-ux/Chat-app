@@ -31,8 +31,6 @@ app.use(
   })
 );
 
-app.options("*", cors());
-
 const server = http.createServer(app);
 const onlineUsers = new Set();
 
@@ -70,10 +68,8 @@ io.on("connection", async (socket) => {
   socket.on("getOnlineUser", (userId) => {
     if (onlineUsers.has(userId)) {
       socket.emit("userOnline", userId);
-      console.log("online", userId);
     } else {
       socket.emit("userOffline", userId);
-      console.log("userOffline", userId);
     }
   });
 

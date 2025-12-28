@@ -4,6 +4,12 @@ import cors from "cors";
 
 
 const app = express();
+
+const allowedOrigins = [
+  process.env.DEV_CLIENT,
+  process.env.PROD_CLIENT,
+];
+
 app.use(
   cors({
     origin: (origin, callback) => {

@@ -17,7 +17,7 @@ const ConnectionList = () => {
   }
 
   return (
-    <div className="w-4/12 border-r border-gray-200 py-5 px-5 bg-gray-50">
+    <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-800">ChatApp</h1>
         <span

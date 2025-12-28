@@ -1,16 +1,33 @@
 import SideBar from "../component/SideBar.jsx";
 import ConnectionList from "../component/ConnectionList.jsx";
 import MessagePanel from "../component/MessagePanel.jsx";
+import PanelShell from "../component/modal/panels/PanelShell.jsx";
+import { useChat } from "../context/ChatContext.jsx";
+import { PANELS } from "../context/Panel.js";
+import Profile from "../component/Profile.jsx";
 
 const Home = () => {
+  const { activePanel } = useChat();
+
   return (
     <div className="h-screen bg-orange-50 flex font-serif overflow-hidden">
-      {/* sidebar panel */}
-
+      {/* left panel */}
       <SideBar />
 
-      <ConnectionList />
+      {/* Middle panel */}
+      <PanelShell
+        visible={PANELS.CONNECTION_LIST === activePanel}
+      >
+        <ConnectionList />
+      </PanelShell>
 
+      <PanelShell 
+      visible={PANELS.USER_PROFILE === activePanel}>
+        <Profile/>
+      </PanelShell>
+
+
+      {/* Right panel */}
       <MessagePanel />
     </div>
   );

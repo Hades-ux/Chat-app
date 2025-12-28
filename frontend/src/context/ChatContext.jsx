@@ -3,6 +3,7 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import { socket } from "../socket.js";
+import { PANELS } from "./Panel.js";
 
 const API = import.meta.env.VITE_API_URL;
 const ChatContext = createContext();
@@ -14,6 +15,8 @@ export const ChatProvider = ({ children }) => {
   const [selectedUser, setSelectedUser] = useState("");
   const [messages, setMessages] = useState([]);
   const [sentMsg, setSentMsg] = useState("");
+  const [activePanel, setActivePanel] = useState(PANELS.CONNECTION_LIST);
+  const [owner, setOwner] = useState(null)
 
   // refresh fetch
   useEffect(() => {
@@ -23,7 +26,9 @@ export const ChatProvider = ({ children }) => {
           withCredentials: true,
         });
         const refresh = res.data.data;
+        setOwner(res.data.user)
         setUser(refresh);
+        console.log(res.data.user)
       } catch (error) {
         setUser(null);
       }
@@ -153,6 +158,9 @@ export const ChatProvider = ({ children }) => {
         user,
         setUser,
         socket,
+        activePanel,
+        setActivePanel,
+        owner
       }}
     >
       {children}
