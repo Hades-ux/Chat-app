@@ -31,7 +31,7 @@ const ChangeUserAvatar = () => {
 
     try {
       setLoading(true);
-      const res = await axios.patch(
+      await axios.patch(
         `${API}/user/update-avatar/Image`,
         formData,
         {

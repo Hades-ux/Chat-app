@@ -19,7 +19,7 @@ const ChangeUserName = () => {
 
     try {
       setLoading(true);
-      const res = await axios.patch(
+      await axios.patch(
         `${API}/user/update/userName`,
         { newUserName: name.trim() },
         {

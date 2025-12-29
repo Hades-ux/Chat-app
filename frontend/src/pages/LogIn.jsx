@@ -11,7 +11,7 @@ const LogIn = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const { setUser } = useChat();
+  const { setUser, setOwner } = useChat();
   const [loading, setLoading] = useState(false);
 
   async function handleOnSumbit(e) {
@@ -28,12 +28,15 @@ const LogIn = () => {
       );
 
       const user = response.data.data._id;
+      const data = response.data.data
       setUser(user);
+      setOwner(data)
 
       toast.success("Login Successfull");
       navigate("/home");
     } catch (error) {
       toast.error(error.response?.data?.message || "Login failed!");
+      console.log(error.message)
     } finally {
       setLoading(false);
     }

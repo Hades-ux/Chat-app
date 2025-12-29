@@ -155,7 +155,7 @@ const MessagePanel = () => {
     });
 
     try {
-      const res = await axios.post(
+      await axios.post(
         `${API}/message/create/${selectedUser._id}`,
         messageData,
         { withCredentials: true }
@@ -167,7 +167,7 @@ const MessagePanel = () => {
   };
 
   return (
-    <div className="flex-1 flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden">
+    <div className="flex-1 flex flex-col bg-white shadow-lg overflow-hidden">
       {!selectedUser ? (
         <p className="flex items-center justify-center h-full text-gray-500 text-lg">
           Select a user to start chatting

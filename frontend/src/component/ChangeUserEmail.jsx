@@ -20,7 +20,7 @@ const ChangeUserEmail = () => {
     }
     try {
       setLoading(true)
-      const res = await axios.patch(
+      await axios.patch(
         `${API}/user/update/userEmail`,
         { newUserEmail: email.trim() },
         { withCredentials: true }

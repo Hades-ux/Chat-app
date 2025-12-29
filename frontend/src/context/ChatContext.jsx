@@ -173,6 +173,7 @@ export const ChatProvider = ({ children }) => {
         activePanel,
         setActivePanel,
         owner,
+        setOwner,
         setPopup,
         popup,
         deleteUser
