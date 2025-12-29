@@ -2,7 +2,7 @@ import { useChat } from "../context/ChatContext";
 import { PANELS } from "../context/UIState.js";
 
 const Setting = () => {
-  const { owner, setActivePanel, logout } = useChat();
+  const { owner, setActivePanel, logout, deleteUser } = useChat();
 
   const avatarUrl = owner?.avatar?.url;
   const firstChar =
@@ -11,6 +11,10 @@ const Setting = () => {
 
   async function handleLogOut() {
     await logout();
+  }
+
+  async function handleDelete() {
+    await deleteUser()
   }
 
   return (
@@ -57,6 +61,16 @@ const Setting = () => {
 
       {/* Divider */}
       <div className="h-px bg-gray-200" />
+
+      {/* Delete */}
+      <button
+        onClick={handleDelete}
+        className="flex items-center gap-4 rounded-2xl p-4
+                   text-red-600 hover:bg-red-50 transition"
+      >
+        <span className="material-symbols-outlined">delete</span>
+        <span className="font-medium">Delete</span>
+      </button>
 
       {/* Logout */}
       <button

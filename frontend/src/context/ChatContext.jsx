@@ -20,15 +20,17 @@ export const ChatProvider = ({ children }) => {
   const [popup, setPopup] = useState(null);
 
   // change Name
-  const ChangeName = async () => {
+  const deleteUser = async () => {
+    if (!window.confirm("Do you want to Log Out?")) return;
     try {
-      const res = await axios.patch(`${API}/user/update/userName`, {
-        withCredentials: true,
-      });
+      await axios.delete(`${API}/user/delete/user`,{withCredentials: true})
+      localStorage.clear()
+      toast.success("User Delete Successfully")
+      navigate("/")
     } catch (error) {
-      toast.error("Not Able to update Name");
+      toast.error("Not Able to delete User")
     }
-  };
+  }
 
   // refresh fetch
   useEffect(() => {
@@ -173,6 +175,7 @@ export const ChatProvider = ({ children }) => {
         owner,
         setPopup,
         popup,
+        deleteUser
       }}
     >
       {children}

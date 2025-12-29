@@ -33,7 +33,7 @@ const deleteUpload = async (public_id) => {
     const response = await v2.uploader.destroy(public_id, {
       resource_type: "image",
     });
-    return response; // { result: 'ok' } or { result: 'not found' }
+    return response;
   } catch (error) {
     console.error("Cloudinary delete error:", error.message);
     return { result: "error", error: error.message };
