@@ -15,7 +15,6 @@ const Profile = () => {
   const firstChar =
     userProfile?.fullName?.charAt(0)?.toUpperCase() ||
     userProfile?.email?.charAt(0)?.toUpperCase();
-
   return (
     <div className="h-full w-full bg-gray-100">
       {/* Top Section */}

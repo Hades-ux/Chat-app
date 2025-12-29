@@ -18,20 +18,20 @@ export const ChatProvider = ({ children }) => {
   const [activePanel, setActivePanel] = useState(PANELS.CONNECTION_LIST);
   const [owner, setOwner] = useState(null);
   const [popup, setPopup] = useState(null);
-  const [userProfile, setUserProfile] = useState(null)
+  const [userProfile, setUserProfile] = useState(null);
 
   // change Name
   const deleteUser = async () => {
     if (!window.confirm("Do you want to Log Out?")) return;
     try {
-      await axios.delete(`${API}/user/delete/user`,{withCredentials: true})
-      localStorage.clear()
-      toast.success("User Delete Successfully")
-      navigate("/")
+      await axios.delete(`${API}/user/delete/user`, { withCredentials: true });
+      localStorage.clear();
+      toast.success("User Delete Successfully");
+      navigate("/");
     } catch (error) {
-      toast.error("Not Able to delete User")
+      toast.error("Not Able to delete User");
     }
-  }
+  };
 
   // refresh fetch
   useEffect(() => {
@@ -114,20 +114,28 @@ export const ChatProvider = ({ children }) => {
     if (!user) return;
 
     setSelectedUser(user);
-    setUserProfile(user)
     setMessages([]);
 
     try {
-      const res = await axios.get(`${API}/message/fetch`, {
+    // Fetch messages and user profile in parallel
+    const [messagesRes, profileRes] = await Promise.all([
+      axios.get(`${API}/message/fetch`, {
         params: { receiver: user._id },
         withCredentials: true,
-      });
+      }),
+      axios.get(`${API}/user/profile/${user._id}`, {
+        withCredentials: true,
+      }),
+    ]);
 
-      setMessages(res.data?.data || []);
-    } catch {
-      toast.error("Failed to load messages");
-    }
-  };
+    // Set messages and profile
+    setMessages(messagesRes.data?.data || []);
+    setUserProfile(profileRes.data?.user || null);
+  } catch (err) {
+    console.error(err);
+    toast.error("Failed to load messages or user profile");
+  }
+};
 
   useEffect(() => {
     if (!socket || !user) return;
@@ -179,7 +187,7 @@ export const ChatProvider = ({ children }) => {
         setPopup,
         popup,
         deleteUser,
-        userProfile
+        userProfile,
       }}
     >
       {children}

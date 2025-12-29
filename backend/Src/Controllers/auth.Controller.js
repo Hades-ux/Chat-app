@@ -1,7 +1,6 @@
 import bcrypt from "bcrypt";
 import User from "../Models/User.Model.js";
 import { registerValidation } from "../validation/auth.validation.js";
-import redis from "../redis.js";
 import { verifyMail } from "../verifyEmail.js";
 import { fileUpload } from "../Utils/cloudinary.js";
 import jwt from "jsonwebtoken";
@@ -167,28 +166,29 @@ const verifyEmail = async (req, res) => {
 // LOGIN
 const loginUser = async (req, res) => {
   const { email, password } = req.body;
-  if (!email.trim() || !password.trim())
-    return res
-      .status(400)
-      .json({ success: false, message: "Email and password required" });
+
+  if (!email || !password)
+    return res.status(400).json({
+      success: false,
+      message: "Email and password required",
+    });
 
   const user = await User.findOne({ email }).select("+password");
   if (!user)
-    return res.status(404).json({ success: false, message: "User Not Found" });
+    return res.status(404).json({
+      success: false,
+      message: "User not found",
+    });
 
-  const verifyPassword = await user.isPasswordCorrect(password);
-  if (!verifyPassword)
-    return res
-      .status(401)
-      .json({ success: false, message: "Invalid credentials" });
+  const isMatch = await user.isPasswordCorrect(password);
+  if (!isMatch)
+    return res.status(401).json({
+      success: false,
+      message: "Invalid credentials",
+    });
 
   const accessToken = user.generateAccessToken();
   const refreshToken = user.generateRefreshToken();
-
-  // Store refresh token in Redis
-  // await redis.set(`refresh:${refreshToken}`, isUser._id.toString(), {
-  //   EX: 7 * 24 * 60 * 60,
-  // });
 
   const cookieOptions = {
     httpOnly: true,
@@ -196,93 +196,77 @@ const loginUser = async (req, res) => {
     sameSite: "None",
     maxAge: 7 * 24 * 60 * 60 * 1000,
   };
+
   res.cookie("accessToken", accessToken, cookieOptions);
   res.cookie("refreshToken", refreshToken, cookieOptions);
 
   return res.status(200).json({
     success: true,
-    message: "Login Successful",
+    message: "Login successful",
     data: {
       _id: user._id,
       fullName: user.fullName,
       email: user.email,
-      avatar: user.avatar,}
+      avatar: user.avatar,
+    },
   });
 };
 
+
 // LOGOUT
 const logOut = async (req, res) => {
-  try {
-    const refreshToken = req.cookies.refreshToken;
-    if (refreshToken) await redis.del(`refresh:${refreshToken}`);
+  res.clearCookie("accessToken");
+  res.clearCookie("refreshToken");
 
-    res.clearCookie("accessToken");
-    res.clearCookie("refreshToken");
-
-    return res
-      .status(200)
-      .json({ success: true, message: "Logout successful" });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: "Error during logout",
-      error: error.message,
-    });
-  }
+  return res.status(200).json({
+    success: true,
+    message: "Logout successful",
+  });
 };
+
 
 // REFRESH TOKEN
 const refreshToken = async (req, res) => {
   try {
     const token = req.cookies.refreshToken;
-    if (!token)
-      return res
-        .status(401)
-        .json({ success: false, message: "No refresh token" });
 
-       // Verify JWT
+    if (!token)
+      return res.status(401).json({
+        success: false,
+        message: "Refresh token missing",
+      });
+
     let decoded;
     try {
-      decoded = jwt.verify(
-        token,
-        process.env.REFRESH_TOKEN_SECRET
-      );
+      decoded = jwt.verify(token, process.env.REFRESH_TOKEN_SECRET);
     } catch (err) {
       return res.status(403).json({
         success: false,
         message: "Invalid or expired refresh token",
       });
     }
-    const userId = await redis.get(`refresh:${token}`);
 
-   if (!userId || userId !== decoded._id) {
-      return res.status(403).json({
-        success: false,
-        message: "Refresh token mismatch",
-      });
-    }
-
-    const user = await User.findById(userId);
+    const user = await User.findById(decoded._id);
     if (!user)
-      return res
-        .status(404)
-        .json({ success: false, message: "User not found" });
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
 
     const newAccessToken = user.generateAccessToken();
     const newRefreshToken = user.generateRefreshToken();
-
-    await redis.del(`refresh:${token}`);
-    await redis.set(`refresh:${newRefreshToken}`, user._id.toString(), {
-      EX: 7 * 24 * 60 * 60,
-    });
 
     res.cookie("refreshToken", newRefreshToken, {
       httpOnly: true,
       secure: true,
       sameSite: "None",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
-    return res.status(200).json({ success: true,  accessToken: newAccessToken, });
+    return res.status(200).json({
+      success: true,
+      accessToken: newAccessToken,
+    });
   } catch (error) {
     return res.status(500).json({
       success: false,
@@ -291,6 +275,7 @@ const refreshToken = async (req, res) => {
     });
   }
 };
+
 
 // FORGOT PASSWORD
 const forgotPassword = async (req, res) => {

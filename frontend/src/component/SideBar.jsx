@@ -55,7 +55,7 @@ const SideBar = () => {
           <button
             aria-label="Account"
             className="material-symbols-outlined cursor-pointer text-gray-700 hover:text-gray-900 text-3xl"
-            onClick={() => setActivePanel(PANELS.USER_PROFILE)}
+            onClick={() => setActivePanel(PANELS.OWNER_PROFILE)}
           >
             account_circle
           </button>

@@ -24,7 +24,7 @@ const Setting = () => {
 
       {/* Profile Card */}
       <div
-        onClick={() => setActivePanel(PANELS.USER_PROFILE)}
+        onClick={() => setActivePanel(PANELS.OWNER_PROFILE)}
         className="group flex items-center justify-between rounded-2xl p-4 cursor-pointer
                    bg-white hover:bg-gray-100 transition"
       >

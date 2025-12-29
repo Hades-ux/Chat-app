@@ -1,6 +1,5 @@
 import { fileUpload, deleteUpload } from "../Utils/cloudinary.js";
 import User from "../Models/User.Model.js";
-import redis from "../redis.js";
 
 // OWNER PROFILE
 const ownerProfile = async (req, res) => {
@@ -40,30 +39,18 @@ const ownerProfile = async (req, res) => {
 // USER PROFILE
 const userProfile = async (req, res) => {
   try {
-    const userId = req.params.id;
-    const cacheKey = `user:${userId}:profile`;
+    const userId = req.params.id; 
 
-    // Try Redis
-    const cached = await redis.get(cacheKey);
-    if (cached) {
-      return res.status(200).json({
-        success: true,
-        fromCache: true,
-        user: JSON.parse(cached),
-      });
-    }
+    const user = await User.findById(userId).select(
+      "-password -refreshToken"
+    );
 
-    // DB fetch
-    const user = await User.findById(userId).select("-password -refreshToken");
     if (!user) {
       return res.status(404).json({
         success: false,
         message: "User not found.",
       });
     }
-
-    // Cache result
-    await redis.set(cacheKey, JSON.stringify(user), { EX: 3600 });
 
     return res.status(200).json({
       success: true,
@@ -76,6 +63,7 @@ const userProfile = async (req, res) => {
     });
   }
 };
+
 
 // UPDATE USERNAME
 const updateUserName = async (req, res) => {

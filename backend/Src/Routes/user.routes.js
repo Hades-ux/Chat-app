@@ -21,7 +21,7 @@ router.patch(
 );
 
 // user Profile
-router.get("/profile", authMiddleware, userProfile);
+router.get("/profile/:id", authMiddleware, userProfile);
 
 // owner Profile
 router.get("/owner/profile", authMiddleware, ownerProfile);

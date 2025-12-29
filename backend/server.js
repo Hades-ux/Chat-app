@@ -3,7 +3,6 @@ import connectDB from "./Src/DB/dataBase.js";
 import http from "http";
 import { Server } from "socket.io";
 import cors from "cors";
-import redis from "./Src/redis.js";
 import "dotenv/config";
 
 const PORT = process.env.PORT || 4444;
@@ -12,8 +11,7 @@ const allowedOrigins = [
   process.env.PROD_CLIENT,
 ];
 
-// Connect database & Redis
-await redis.connect();
+// Connect database
 await connectDB();
 
 app.use(

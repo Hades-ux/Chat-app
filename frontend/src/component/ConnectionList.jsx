@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useChat } from "../context/ChatContext";
 
 const ConnectionList = () => {
-  const { connections = [], fetchConnections, logout, selectUser } = useChat();
+  const { connections, fetchConnections, logout, selectUser } = useChat();
 
   useEffect(() => {
     fetchConnections();
@@ -38,7 +38,7 @@ const ConnectionList = () => {
             {/* Avatar + online indicator */}
             <div className="relative w-12 h-12">
               <div className="w-full h-full rounded-full bg-gray-200 flex items-center justify-center text-gray-500 font-semibold text-xl">
-                {connection.avatar.url ? (
+                {connection?.avatar?.url ? (
                   <img
                     src={connection.avatar.url||""}
                     alt={connection.fullName}
