@@ -97,11 +97,8 @@ const updateUserName = async (req, res) => {
     }
 
     await User.findByIdAndUpdate(req.user._id, {
-      $set: { userName: newUserName },
+      $set: { fullName: newUserName },
     });
-
-    // ⭐ Invalidate cache
-    await redis.del(`user:${req.user._id}:profile`);
 
     return res.status(200).json({
       success: true,
@@ -151,8 +148,6 @@ const UpdateUserAvatar = async (req, res) => {
       },
     });
 
-    // Invalidate cache
-    await redis.del(`user:${req.user._id}:profile`);
 
     return res.status(200).json({
       success: true,
@@ -193,9 +188,6 @@ const UpdateUserEmail = async (req, res) => {
       $set: { email: newUserEmail },
     });
 
-    // Clear cache
-    await redis.del(`user:${req.user._id}:profile`);
-
     return res.status(200).json({
       success: true,
       message: `Email updated successfully to ${newUserEmail}`,
@@ -216,9 +208,6 @@ const deleteUser = async (req, res) => {
 
     await User.findByIdAndDelete(userId);
 
-    // ⭐ Delete cache
-    await redis.del(`user:${userId}:profile`);
-
     return res.status(200).json({
       success: true,
       message: "User deleted successfully",
@@ -232,27 +221,6 @@ const deleteUser = async (req, res) => {
   }
 };
 
-// USER ONLINE STATUS
-const userOnline = async (req, res) => {
-  try {
-    const userId = req.params.userId;
-
-    // Get online status from Redis
-    const status = await redis.get(`user:${userId}:online`);
-
-    return res.status(200).json({
-      success: true,
-      userId,
-      online: status === "online",
-    });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      error: error.message,
-    });
-  }
-};
-
 export {
   ownerProfile,
   userProfile,
@@ -260,5 +228,4 @@ export {
   UpdateUserAvatar,
   UpdateUserEmail,
   deleteUser,
-  userOnline,
 };
