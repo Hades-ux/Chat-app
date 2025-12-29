@@ -18,6 +18,7 @@ export const ChatProvider = ({ children }) => {
   const [activePanel, setActivePanel] = useState(PANELS.CONNECTION_LIST);
   const [owner, setOwner] = useState(null);
   const [popup, setPopup] = useState(null);
+  const [userProfile, setUserProfile] = useState(null)
 
   // change Name
   const deleteUser = async () => {
@@ -113,6 +114,7 @@ export const ChatProvider = ({ children }) => {
     if (!user) return;
 
     setSelectedUser(user);
+    setUserProfile(user)
     setMessages([]);
 
     try {
@@ -176,7 +178,8 @@ export const ChatProvider = ({ children }) => {
         setOwner,
         setPopup,
         popup,
-        deleteUser
+        deleteUser,
+        userProfile
       }}
     >
       {children}

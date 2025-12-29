@@ -2,6 +2,9 @@ import { useRef, useEffect } from "react";
 import { useChat } from "../context/ChatContext";
 import axios from "axios";
 import { useState } from "react";
+import { PANELS, POPUPS } from "../context/UIState";
+import PopupShell from "./modal/popup/PopupShell";
+import UserImage from "./UserImage";
 
 const MessagePanel = () => {
   const {
@@ -12,6 +15,9 @@ const MessagePanel = () => {
     setSentMsg,
     user,
     socket,
+    setActivePanel,
+   setPopup,
+    popup
   } = useChat();
 
   const [typing, setTyping] = useState(false);
@@ -176,7 +182,8 @@ const MessagePanel = () => {
         <>
           {/* HEADER */}
           <div className="p-4 border-b bg-gray-100 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center text-gray-600">
+            <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 cursor-pointer"
+            onClick={()=>setPopup(POPUPS.USER_AVATAR)}>
               {selectedUser.avatar.url ? (
                 <img
                   src={selectedUser.avatar.url || ""}
@@ -187,11 +194,12 @@ const MessagePanel = () => {
                 <span className="text-gray-500 font-semibold text-xl">
                   {selectedUser.fullName.charAt(0).toUpperCase()}
                 </span>
-              )}{" "}
+              )}
             </div>
-            <h2 className="text-xl font-semibold text-gray-800">
+            <h2 className="text-xl font-semibold text-gray-800 cursor-pointer"
+            onClick={()=>setActivePanel(PANELS.USER_PROFILE)}>
               {selectedUser.fullName}
-            </h2>{" "}
+            </h2>
             {typing && (
               <span className="text-sm text-gray-500 ml-2">typing...</span>
             )}
@@ -254,7 +262,11 @@ const MessagePanel = () => {
           </div>
         </>
       )}
+    <PopupShell visible={POPUPS.USER_AVATAR === popup}>
+        <UserImage/>
+    </PopupShell>
     </div>
+
   );
 };
 

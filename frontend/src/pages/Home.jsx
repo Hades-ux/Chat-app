@@ -6,6 +6,7 @@ import { useChat } from "../context/ChatContext.jsx";
 import { PANELS } from "../context/UIState.js";
 import Profile from "../component/Profile.jsx";
 import Setting from "../component/Setting.jsx";
+import UserProfile from"../component/UserProfile.jsx";
 
 const Home = () => {
   const { activePanel } = useChat();
@@ -20,7 +21,7 @@ const Home = () => {
         <ConnectionList />
       </PanelShell>
 
-      <PanelShell visible={PANELS.USER_PROFILE === activePanel}>
+      <PanelShell visible={PANELS.OWNER_PROFILE === activePanel}>
         <Profile />
       </PanelShell>
 
@@ -30,6 +31,11 @@ const Home = () => {
 
       {/* Right panel */}
       <MessagePanel />
+
+      <PanelShell visible={PANELS.USER_PROFILE === activePanel}>
+        <UserProfile/>
+      </PanelShell>
+
     </div>
   );
 };
