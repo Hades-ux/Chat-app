@@ -17,6 +17,7 @@ export const ChatProvider = ({ children }) => {
   const [sentMsg, setSentMsg] = useState("");
   const [activePanel, setActivePanel] = useState(PANELS.CONNECTION_LIST);
   const [owner, setOwner] = useState(null)
+  const [popup, setPopup] = useState(null)
 
   // refresh fetch
   useEffect(() => {
@@ -28,7 +29,6 @@ export const ChatProvider = ({ children }) => {
         const refresh = res.data.data;
         setOwner(res.data.user)
         setUser(refresh);
-        console.log(res.data.user)
       } catch (error) {
         setUser(null);
       }
@@ -70,7 +70,6 @@ export const ChatProvider = ({ children }) => {
         { withCredentials: true }
       );
       toast.success(res.data.message);
-      fetchConnections();
     } catch (error) {
       toast.error(error.response?.data?.message || error.message);
     }
@@ -160,7 +159,9 @@ export const ChatProvider = ({ children }) => {
         socket,
         activePanel,
         setActivePanel,
-        owner
+        owner,
+        setPopup,
+        popup
       }}
     >
       {children}

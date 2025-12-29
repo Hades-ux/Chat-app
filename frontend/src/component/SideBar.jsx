@@ -1,34 +1,20 @@
-import { useState, useEffect, Activity } from "react";
-import { toast } from "react-toastify";
+import { useEffect} from "react";
 import { useChat } from "../context/ChatContext";
 import { PANELS } from "../context/Panel";
+import { POPUPS } from "../context/Panel";
+import PopupShell from "./modal/popup/PopupShell";
+import AddConection from "./AddConection";
 
 const SideBar = () => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [email, setEmail] = useState("");
-  const { addConnection, setActivePanel } = useChat();
+  const { setActivePanel, popup, setPopup  } = useChat();
 
-  async function handleAddConnection(e) {
-    e.preventDefault();
-    if (!email.trim()) {
-      toast.error("Email cannot be empty");
-      return;
-    }
-    try {
-      await addConnection(email);
-      setEmail("");
-      setIsOpen(false);
-      toast.success("Connection added successfully");
-    } catch (err) {
-      toast.error(err.message || "Failed to add connection");
-    }
-  }
+ 
 
   // Close modal on Escape key
   useEffect(() => {
-    if (!isOpen) return;
+    if (!popup) return;
     const handleEsc = (e) => {
-      if (e.key === "Escape") setIsOpen(false);
+      if (e.key === "Escape") setPopup(null);
     };
     window.addEventListener("keydown", handleEsc);
     return () => window.removeEventListener("keydown", handleEsc);
@@ -42,7 +28,7 @@ const SideBar = () => {
           <button
             aria-label="Add Connection"
             className="material-symbols-outlined cursor-pointer text-gray-700 hover:text-gray-900 transition text-3xl"
-            onClick={()=> setIsOpen(true)}
+            onClick={()=> setPopup(POPUPS.ADD_CONNECTION)}
           >
             person_add
           </button>
@@ -76,53 +62,10 @@ const SideBar = () => {
         </div>
       </nav>
 
-      {/* ADD CONNECTION */}
-      <Activity mode={isOpen ? "visible" : "hidden"}>
-        <div
-          className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-40"
-          onClick={() => setIsOpen(false)}
-          role="dialog"
-          aria-modal="true"
-        >
-          <div
-            className="bg-white w-96 p-8 rounded-2xl shadow-xl border border-gray-200"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex justify-between items-center mb-5">
-              <h1 className="text-xl font-semibold text-gray-800">
-                Add Connection
-              </h1>
-              <button
-                aria-label="Close"
-                className="material-symbols-outlined cursor-pointer text-gray-600 hover:text-gray-900"
-                onClick={() => setIsOpen(false)}
-              >
-                close
-              </button>
-            </div>
+      <PopupShell visible={POPUPS.ADD_CONNECTION === popup} >
+          <AddConection/>
+      </PopupShell>
 
-            <form
-              onSubmit={handleAddConnection}
-              className="flex flex-col gap-4"
-            >
-              <input
-                type="email"
-                placeholder="example@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="input-box"
-              />
-              <button
-                type="submit"
-                disabled={!email.trim()}
-                className="bg-gray-700 hover:bg-gray-800 text-white py-2 rounded-xl transition font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Add Connection
-              </button>
-            </form>
-          </div>
-        </div>
-      </Activity>
     </>
   );
 };

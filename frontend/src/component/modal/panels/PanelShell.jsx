@@ -1,6 +1,6 @@
 import { Activity } from "react";
 
-const PanelShell = ({ visible, title, children }) => {
+const PanelShell = ({ visible, children }) => {
   return (
     <Activity mode={visible ? "visible" : "hidden"}>
       <div 
