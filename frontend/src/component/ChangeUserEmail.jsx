@@ -27,11 +27,8 @@ const ChangeUserEmail = () => {
       );
       toast.success(`${email} updated successfully`)
       setEmail("")
-       setOwner((prev) => ({
-        ...prev,
-        email: email.trim(),
-      }));
       setPopup(null);
+      window.location.reload();
     } catch (error) {
       toast.error("Not able to Update Email");
     } finally{

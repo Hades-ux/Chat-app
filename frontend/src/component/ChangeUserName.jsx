@@ -28,11 +28,8 @@ const ChangeUserName = () => {
       );
       toast.success(`${name} updated successfully`);
       setName("");
-      setOwner((prev) => ({
-        ...prev,
-        fullName: name.trim(),
-      }));
       setPopup(null);
+      window.location.reload();
     } catch (error) {
       toast.error("Not Able to update Name");
     } finally {
