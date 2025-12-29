@@ -3,7 +3,7 @@ import ConnectionList from "../component/ConnectionList.jsx";
 import MessagePanel from "../component/MessagePanel.jsx";
 import PanelShell from "../component/modal/panels/PanelShell.jsx";
 import { useChat } from "../context/ChatContext.jsx";
-import { PANELS } from "../context/Panel.js";
+import { PANELS } from "../context/UIState.js";
 import Profile from "../component/Profile.jsx";
 import Setting from "../component/Setting.jsx";
 

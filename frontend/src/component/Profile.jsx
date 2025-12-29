@@ -1,7 +1,12 @@
 import { useChat } from "../context/ChatContext";
+import { POPUPS } from "../context/UIState";
+import ChangeUserName from "./ChangeUserName";
+import ChangeUserEmail from "./ChangeUserEmail"
+import PopupShell from "./modal/popup/PopupShell";
+import ChangeUserAvatar from "./ChangeUserAvatar";
 
 const Profile = () => {
-  const { owner } = useChat();
+  const { owner, setPopup, popup } = useChat();
 
   if (!owner) {
     return (
@@ -21,7 +26,8 @@ const Profile = () => {
       {/* Top Section */}
       <div className="bg-white px-6 pt-8 pb-6 flex flex-col items-center">
         {/* Avatar */}
-        <div className="w-32 h-32 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden mb-4">
+        <div className="w-32 h-32 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden mb-4 cursor-pointer"
+        onClick={()=>setPopup(POPUPS.CHANGE_AVATAR)}>
           {avatarUrl ? (
             <img
               src={avatarUrl}
@@ -50,12 +56,32 @@ const Profile = () => {
         {/* Name */}
         <div className="px-6 py-4 border-b border-gray-200">
           <p className="text-xs text-gray-500 mb-1">Name</p>
-        <p className="text-xl font-medium text-gray-900">{owner.fullName}</p>
+
+          <div className="flex items-center justify-between">
+            <p className="text-xl font-medium text-gray-900">
+              {owner.fullName}
+            </p>
+            <button
+              className="bg-green-400 text-white p-2 rounded-md"
+              onClick={() => setPopup(POPUPS.CHANGE_USERNAME)}
+            >
+              Change Name
+            </button>
+          </div>
         </div>
         {/* Email */}
         <div className="px-6 py-4 border-b border-gray-200">
           <p className="text-xs text-gray-500 mb-1">Email</p>
-          <p className="text-gray-900">{owner.email}</p>
+
+          <div className="flex items-center justify-between">
+            <p className="text-gray-900">{owner.email}</p>
+            <button
+              className="bg-green-400 text-white p-2 rounded-md"
+              onClick={() => setPopup(POPUPS.CHANGE_EMAIL)}
+            >
+              Change Email
+            </button>
+          </div>
         </div>
 
         {/* Joined Date */}
@@ -66,6 +92,20 @@ const Profile = () => {
           </p>
         </div>
       </div>
+
+      {/* popUps */}
+        <PopupShell visible={POPUPS.CHANGE_USERNAME === popup}>
+          <ChangeUserName/>
+        </PopupShell>
+
+        <PopupShell visible={POPUPS.CHANGE_EMAIL === popup}>
+          <ChangeUserEmail/>
+        </PopupShell>
+
+        <PopupShell visible={POPUPS.CHANGE_AVATAR === popup}>
+          <ChangeUserAvatar/>
+        </PopupShell>
+
     </div>
   );
 };

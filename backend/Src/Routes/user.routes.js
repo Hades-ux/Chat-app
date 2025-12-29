@@ -17,7 +17,7 @@ const router = Router();
 router.patch(
   "/update-avatar/Image",
   authMiddleware,
-  upload.fields([{ name: "avatar", maxCount: 1 }]),
+  upload.single("avatar"),
   UpdateUserAvatar
 );
 

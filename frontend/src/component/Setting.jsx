@@ -1,5 +1,5 @@
 import { useChat } from "../context/ChatContext";
-import { PANELS } from "../context/Panel";
+import { PANELS } from "../context/UIState.js";
 
 const Setting = () => {
   const { owner, setActivePanel, logout } = useChat();

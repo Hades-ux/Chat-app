@@ -3,7 +3,7 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import { socket } from "../socket.js";
-import { PANELS } from "./Panel.js";
+import { PANELS } from "./UIState.js";
 
 const API = import.meta.env.VITE_API_URL;
 const ChatContext = createContext();
@@ -16,8 +16,19 @@ export const ChatProvider = ({ children }) => {
   const [messages, setMessages] = useState([]);
   const [sentMsg, setSentMsg] = useState("");
   const [activePanel, setActivePanel] = useState(PANELS.CONNECTION_LIST);
-  const [owner, setOwner] = useState(null)
-  const [popup, setPopup] = useState(null)
+  const [owner, setOwner] = useState(null);
+  const [popup, setPopup] = useState(null);
+
+  // change Name
+  const ChangeName = async () => {
+    try {
+      const res = await axios.patch(`${API}/user/update/userName`, {
+        withCredentials: true,
+      });
+    } catch (error) {
+      toast.error("Not Able to update Name");
+    }
+  };
 
   // refresh fetch
   useEffect(() => {
@@ -27,7 +38,7 @@ export const ChatProvider = ({ children }) => {
           withCredentials: true,
         });
         const refresh = res.data.data;
-        setOwner(res.data.user)
+        setOwner(res.data.user);
         setUser(refresh);
       } catch (error) {
         setUser(null);
@@ -161,7 +172,7 @@ export const ChatProvider = ({ children }) => {
         setActivePanel,
         owner,
         setPopup,
-        popup
+        popup,
       }}
     >
       {children}

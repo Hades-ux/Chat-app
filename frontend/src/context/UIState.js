@@ -8,4 +8,5 @@ export const POPUPS = {
   ADD_CONNECTION: "addConnection",
   CHANGE_USERNAME: " changeUserName",
   CHANGE_EMAIL: "changeEmail",
+  CHANGE_AVATAR: "changeAvatar"
 };

@@ -1,7 +1,7 @@
 import { useEffect} from "react";
 import { useChat } from "../context/ChatContext";
-import { PANELS } from "../context/Panel";
-import { POPUPS } from "../context/Panel";
+import { PANELS } from "../context/UIState.js";
+import { POPUPS } from "../context/UIState.js";
 import PopupShell from "./modal/popup/PopupShell";
 import AddConection from "./AddConection";
 

@@ -26,13 +26,13 @@ const ownerProfile = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: "User Found",
-      data:user?._id,
-      user
+      data: user?._id,
+      user,
     });
   } catch (error) {
     return res.status(401).json({
       success: false,
-       message: "Not authenticated",
+      message: "Not authenticated",
     });
   }
 };
@@ -157,6 +157,10 @@ const UpdateUserAvatar = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: "Avatar updated successfully",
+      avatar: {
+        url: newAvatar.secure_url,
+        public_id: newAvatar.public_id,
+      },
     });
   } catch (error) {
     return res.status(500).json({
