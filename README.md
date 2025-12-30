@@ -87,5 +87,3 @@ Secure authentication patterns
 Real-time system design
 
 Clean backend architecture
-
-Interview-ready engineering decisions
