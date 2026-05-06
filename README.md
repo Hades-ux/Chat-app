@@ -1,55 +1,89 @@
-Overview
+📌 Overview
 
 This project is a full-stack real-time chat application designed to simulate the architecture of modern messaging platforms.
-It focuses on performance, security, background processing, and distributed system concepts.
 
-The system uses:
+It focuses on:
 
-React for the responsive UI
+Performance
 
-Node.js (Express) as the main API + WebSocket server
+Security
 
-Redis for caching + Pub/Sub
+Real-time communication
 
-JWT with HttpOnly cookies for secure authentication
+Scalable backend design
 
+The goal of this project is to demonstrate system design thinking, production-grade backend practices, and real-world application architecture, making it suitable for technical interviews and portfolio evaluation.
 
-This project is designed to demonstrate system design thinking, multi-language pipelines, and production-grade backend skills for interviews.
+🛠️ Tech Stack
+
+Frontend: React
+
+Backend: Node.js with Express
+
+Real-Time Communication: WebSocket
+
+Authentication: JWT with HttpOnly cookies
 
 🧩 Features
-
 🔐 Authentication
 
-JWT authentication with HttpOnly cookies
+JWT-based authentication
+
+Tokens stored in HttpOnly cookies for enhanced security
 
 Secure session handling
 
-Automatic token refresh
-
 💬 Real-Time Messaging
 
-Send & receive messages instantly
+Instant send & receive of messages
 
-WebSocket-based communication
+Persistent WebSocket connections
 
-Delivery acknowledgment
+Low-latency communication
 
 ⌨️ Typing Indicator
 
-Real-time "user is typing…" status
+Real-time “user is typing…” status
 
-Only visible in 1-on-1 chats
+Visible only in 1-on-1 chats
 
-Efficient throttled events
+Throttled events to reduce unnecessary network traffic
 
-🗂️ Backend Functionality
+🟢 Online Status
+
+Real-time online/offline indicator
+
+Updated automatically based on socket connections
+
+🗂️ Backend Architecture
 
 Modular Express architecture
 
-Proper input validation
+Clear separation of routes, controllers, and services
 
-Centralized error handling
+Proper input validation and error handling
 
-Logging system
+Designed with scalability in mind
 
-Rate limiting (anti-abuse)
+🚧 Future Updates (Planned)
+
+👥 Group chat support
+
+🔄 Automatic access token refresh
+
+📧 Email verification flow
+
+📎 Media & file sharing
+
+🧪 Automated testing (unit & integration)
+
+💡 Why This Project?
+
+This project is built to reflect how real-world chat systems are designed, not just to send messages.
+It demonstrates:
+
+Secure authentication patterns
+
+Real-time system design
+
+Clean backend architecture
