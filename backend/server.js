@@ -1,30 +1,17 @@
+import 'dotenv/config';
 import app from "./app.js";
 import connectDB from "./Src/DB/dataBase.js";
 import http from "http";
 import { Server } from "socket.io";
 import cors from "cors";
-import "dotenv/config";
 
-const PORT = process.env.PORT || 4444;
-const allowedOrigins = [
-  process.env.DEV_CLIENT,
-  process.env.PROD_CLIENT,
-];
-
+const PORT = process.env.PORT ||5555;
+const origin = process.env.CLIENT
 // Connect database
 await connectDB();
 
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      if (!origin) return callback(null, true); // Postman / mobile
-
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
-
-      callback(new Error(`CORS blocked: ${origin}`));
-    },
+app.use(cors({
+    origin: origin,
     credentials: true,
   })
 );
@@ -35,15 +22,7 @@ const onlineUsers = new Set();
 // initialize socket.io
 const io = new Server(server, {
   cors: {
-    origin: (origin, callback) => {
-      if (!origin) return callback(null, true);
-
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
-
-      callback(new Error("Not allowed by CORS"));
-    },
+    origin: origin,
     methods: ["GET", "POST"],
     credentials: true,
   },
@@ -102,5 +81,5 @@ io.on("connection", async (socket) => {
   // START SERVER
 });
 server.listen(PORT, () => {
-  console.log(`\nServer running: http://localhost:${PORT}`);
+ console.log(` Server ready at: http://localhost:${PORT}`);
 });

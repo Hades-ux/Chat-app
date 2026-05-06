@@ -140,7 +140,7 @@ const verifyEmail = async (req, res) => {
       });
     }
 
-    // Already verified check (optional but good)
+    // Already verified check
     if (user.isVerified) {
       return res.status(200).json({
         success: true,

@@ -173,7 +173,7 @@ const UpdateUserEmail = async (req, res) => {
       });
 
     await User.findByIdAndUpdate(req.user._id, {
-      $set: { email: newUserEmail },
+      $set: { email: newUserEmail, isVerified:false },
     });
 
     return res.status(200).json({

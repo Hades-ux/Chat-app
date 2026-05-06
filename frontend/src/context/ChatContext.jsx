@@ -41,7 +41,7 @@ export const ChatProvider = ({ children }) => {
           withCredentials: true,
         });
         const refresh = res.data.data;
-        setOwner(res.data.user);
+        setOwner(res.data.user);        
         setUser(refresh);
       } catch (error) {
         setUser(null);

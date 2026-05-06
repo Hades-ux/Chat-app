@@ -5,22 +5,11 @@ import cors from "cors";
 
 const app = express();
 
-const allowedOrigins = [
-  process.env.DEV_CLIENT,
-  process.env.PROD_CLIENT,
-];
+const allowedOrigins = process.env.CLIENT;
 
 app.use(
   cors({
-    origin: (origin, callback) => {
-      if (!origin) return callback(null, true);
-
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
-
-      callback(new Error(`CORS blocked: ${origin}`));
-    },
+    origin:allowedOrigins,
     credentials: true,
   })
 )
