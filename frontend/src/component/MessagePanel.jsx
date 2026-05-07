@@ -184,7 +184,7 @@ const MessagePanel = () => {
           <div className="p-4 border-b bg-gray-100 flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 cursor-pointer"
             onClick={()=>setPopup(POPUPS.USER_AVATAR)}>
-              {selectedUser.avatar.url ? (
+              {selectedUser?.avatar?.url ? (
                 <img
                   src={selectedUser.avatar.url || ""}
                   alt={selectedUser.fullName}
