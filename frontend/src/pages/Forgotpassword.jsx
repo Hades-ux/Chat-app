@@ -32,7 +32,7 @@ const Forgotpassword = () => {
   };
 
   return (
-    <div className="box-border min-h-screen bg-orange-50 flex items-center justify-center">
+    <div className="box-border min-h-screen bg-gray-600 flex items-center justify-center">
       <div className="border h-96 w-full max-w-xl rounded-3xl border-gray-200 bg-white shadow-2xl flex flex-col gap-4 items-center">
         <h2 className="text-2xl font-semibold text-center mt-4 mb-2">
           Forgot Password?

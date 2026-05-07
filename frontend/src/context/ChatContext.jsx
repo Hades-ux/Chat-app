@@ -20,9 +20,8 @@ export const ChatProvider = ({ children }) => {
   const [popup, setPopup] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
 
-  // change Name
   const deleteUser = async () => {
-    if (!window.confirm("Do you want to Log Out?")) return;
+    if (!window.confirm("Do you want to Delet your profile?")) return;
     try {
       await axios.delete(`${API}/user/delete/user`, { withCredentials: true });
       localStorage.clear();
