@@ -1,12 +1,16 @@
-export const validate = (validator) => (req, res, next) => {
-  const error = validator(req.body);
+import { validationResult } from "express-validator";
 
-  if (error) {
+const validationMiddleware = (req, res, next) => {
+  const errors = validationResult(req);
+
+  if(!errors.isEmpty()){
     return res.status(400).json({
       success: false,
-      message: error,
+      errors: errors.arrary(),
     });
   }
 
   next();
 };
+
+export default validationMiddleware;
