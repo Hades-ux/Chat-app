@@ -8,7 +8,12 @@ import { body } from "express-validator";
   .isLength({min:3})
   .withMessage("Name must be at least 3 charactor"),
 
-  body("email"),
+  body("email")
+  .isEmail()
+  .withMessage("Enter valid Email") ,
 
   body("password")
+  .isLength({min:5})
+  .withMessage("Password must be minimum 5 charactor")
+  
  ]

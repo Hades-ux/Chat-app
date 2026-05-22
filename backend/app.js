@@ -1,6 +1,7 @@
 import express from "express";
 import cookieParser from "cookie-parser";
 import cors from "cors";
+import errorMiddleware from "./Src/Middlewares/error.Middleware.js"
 
 
 const app = express();
@@ -25,6 +26,8 @@ app.get("/", (req, res) => {
     message: "Server is up and running",
   });
 });
+
+app.use(errorMiddleware);
 
 // routes import
 import authRouter  from "./Src/Routes/auth.routes.js"
