@@ -11,8 +11,9 @@ import {
 } from "../Controllers/auth.Controller.js";
 import { upload } from "../Middlewares/multer.Middleware.js";
 import { authMiddleware } from "../Middlewares/jwt.Middleware.js";
-import { validate } from "../Middlewares/validation.Middleware.js";
+import validationMiddleware  from "../Middlewares/validation.Middleware.js";
 import { registerValidation } from "../validation/auth.validation.js";
+import { validate } from "../Middlewares/imageValidater.Middleware.js";
 
 const router = Router();
 

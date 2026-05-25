@@ -125,10 +125,6 @@ const UpdateUserAvatar = async (req, res) => {
         message: "User not found",
       });
 
-    // Delete old avatar
-    if (user.avatar?.public_id) {
-      await deleteUpload(user.avatar.public_id);
-    }
 
     await User.findByIdAndUpdate(req.user._id, {
       $set: {

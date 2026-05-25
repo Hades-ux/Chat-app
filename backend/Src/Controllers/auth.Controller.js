@@ -1,7 +1,7 @@
 import bcrypt from "bcrypt";
 import User from "../Models/User.Model.js";
 import { registerValidation } from "../validation/auth.validation.js";
-import { verifyMail } from "../verifyEmail.js";
+import { verifyMail } from "../Utils/verifyEmail.js";
 import { fileUpload } from "../Utils/cloudinary.js";
 import jwt from "jsonwebtoken";
 import "dotenv/config";
