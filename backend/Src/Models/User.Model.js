@@ -1,6 +1,6 @@
-import mongoose from "mongoose";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema(
   {
@@ -14,20 +14,26 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
       minlength: 6,
-      select:false,
+      select: false,
     },
 
     avatar: {
-      url: { type: String,},
-      public_id: { type: String,},
+      type: {
+        url: { type: String },
+        public_id: { type: String },
+      },
+      default: {},
     },
 
     email: {
+      index: true,
       type: String,
       required: true,
       unique: true,
       lowercase: true,
       trim: true,
+      match: [/^\S+@\S+\.\S+$/, "Invalid email"],
+
     },
 
     isVerified: {
@@ -45,8 +51,8 @@ const userSchema = new mongoose.Schema(
     },
 
     refreshToken: {
-      type: [String],
-      select:false,
+      type: String,
+      select: false,
     },
   },
   { timestamps: true }
@@ -97,16 +103,16 @@ userSchema.methods.generateRefreshToken = function () {
 
 // lastActive
 userSchema.methods.updateLastActive = function () {
-  this.lastActive = Date.now();
-  return this.save();
+  return this.updateOne({
+    lastActive: Date.now(),
+  });
 };
 
-// // do it later
-// // Hashing Refresh token
-// userSchema.methods.addRefreshToken = async function (token) {
-//   const hashToken = crypto.createHash("sha256").update(token).digest("hex")
-//   this.refreshTokens.push(hashToken);
-//   await this.save()
-// }
+// Refresh token (hashing later)
+userSchema.methods.setRefreshToken = function (newRefreshToken) {
+    return this.updateOne({
+    refreshToken: newRefreshToken,
+  });
+};
 
 export default mongoose.model("User", userSchema);
