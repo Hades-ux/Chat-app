@@ -14,7 +14,21 @@ import { body } from "express-validator";
   .withMessage("Enter valid Email") ,
 
   body("password")
-  .isLength({min:5})
-  .withMessage("Password must be minimum 5 charactor")
+  .isLength({min:8})
+  .withMessage("Password must be minimum 8 charactor")
   
  ]
+
+ export const loginUserValidation = [
+
+  body("email")
+  .trim()
+  .isEmail()
+  .withMessage("Enter valid Email") ,
+
+  body("password")
+  .isLength({min:8})
+  .withMessage("Password must be minimum 8 charactor")
+
+ ]
+ 

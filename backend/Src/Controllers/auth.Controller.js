@@ -1,10 +1,11 @@
 import bcrypt from "bcrypt";
 import User from "../Models/User.Model.js";
+import cookieOptions from "../Utils/cookiesOptions.js";
 import { registerUserValidation } from "../validation/auth.validation.js";
 import { verifyMail } from "../Utils/verifyEmail.js";
 import { fileUpload } from "../Utils/cloudinary.js";
 import { asyncHandler } from "../Utils/asyncHandler.js"
-import { registerUserService } from "../service/auth.Service.js";
+import { loginUserService, registerUserService } from "../service/auth.Service.js";
 
 import jwt from "jsonwebtoken";
 import "dotenv/config";
@@ -18,18 +19,42 @@ const registerUserController = asyncHandler(async(req, res) =>{
     fullName,
     email,
     password,
-  })
+  });
 
   res.status(201).json({
     success: true,
+    message: "User has been created",
     data: {
       userName: createUser.fullName,
       email: createUser.email
     }
-  })
+  });
 
 }
 
+)
+
+// LOGIN
+const loginUserController = asyncHandler( async (req, res) => {
+  const { email, password } = req.body;
+
+ const { user, accessToken, refreshToken } = await loginUserService({ email, password });
+    
+      res.cookie("accessToken", accessToken, cookieOptions);
+      res.cookie("refreshToken", refreshToken, cookieOptions);
+
+  res.status(200).json({
+    success: true,
+    message: "Login successful",
+    data: {
+      _id: user._id,
+      fullName: user.fullName,
+      email: user.email,
+      avatar: user.avatar,
+      createdAt: user.createdAt,
+    },
+  });
+}
 )
 
 // send verified email
@@ -134,55 +159,7 @@ const verifyEmail = async (req, res) => {
   }
 };
 
-// LOGIN
-const loginUser = async (req, res) => {
-  const { email, password } = req.body;
 
-  if (!email || !password)
-    return res.status(400).json({
-      success: false,
-      message: "Email and password required",
-    });
-
-  const user = await User.findOne({ email }).select("+password");
-  if (!user)
-    return res.status(404).json({
-      success: false,
-      message: "User not found",
-    });
-
-  const isMatch = await user.isPasswordCorrect(password);
-  if (!isMatch)
-    return res.status(401).json({
-      success: false,
-      message: "Invalid credentials",
-    });
-
-  const accessToken = user.generateAccessToken();
-  const refreshToken = user.generateRefreshToken();
-
-  const cookieOptions = {
-    httpOnly: true,
-    secure: true,
-    sameSite: "None",
-    maxAge: 7 * 24 * 60 * 60 * 1000,
-  };
-
-  res.cookie("accessToken", accessToken, cookieOptions);
-  res.cookie("refreshToken", refreshToken, cookieOptions);
-
-  return res.status(200).json({
-    success: true,
-    message: "Login successful",
-    data: {
-      _id: user._id,
-      fullName: user.fullName,
-      email: user.email,
-      avatar: user.avatar,
-      createdAt: user.createdAt,
-    },
-  });
-};
 
 
 // LOGOUT
