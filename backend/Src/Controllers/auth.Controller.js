@@ -5,13 +5,13 @@ import { registerUserValidation } from "../validation/auth.validation.js";
 import { verifyMail } from "../Utils/verifyEmail.js";
 import { fileUpload } from "../Utils/cloudinary.js";
 import { asyncHandler } from "../Utils/asyncHandler.js"
-import { loginUserService, registerUserService } from "../service/auth.Service.js";
+import { loginUserService, refreshTokenService, registerUserService } from "../service/auth.Service.js";
 
 import jwt from "jsonwebtoken";
 import "dotenv/config";
 
 // REGISTER
-const registerUserController = asyncHandler(async(req, res) =>{
+const register = asyncHandler(async(req, res) =>{
 
   const { email, fullName, password } = req.body;
 
@@ -35,7 +35,7 @@ const registerUserController = asyncHandler(async(req, res) =>{
 )
 
 // LOGIN
-const loginUserController = asyncHandler( async (req, res) => {
+const login = asyncHandler( async (req, res) => {
   const { email, password } = req.body;
 
  const { user, accessToken, refreshToken } = await loginUserService({ email, password });
@@ -56,6 +56,34 @@ const loginUserController = asyncHandler( async (req, res) => {
   });
 }
 )
+
+// LOGOUT
+const logOut = async (req, res) => {
+  res.clearCookie("accessToken");
+  res.clearCookie("refreshToken");
+
+  return res.status(200).json({
+    success: true,
+    message: "Logout successful",
+  });
+};
+
+// REFRESH TOKEN
+const refreshToken = async (req, res) => {
+
+  const token = req.cookie.refreshToken
+  
+  const { accessToken, refreshToken } = await refreshTokenService(token)
+
+  res.cookie("Access Token",  accessToken, cookieOptions);
+  res.cookie("Refresh Token", refreshToken, cookieOptions);
+
+  res.status(200).json({
+    success: true,
+    message: "Token is updated"
+  })
+
+};
 
 // send verified email
 const sendEmail = async (req, res) => {
@@ -159,73 +187,6 @@ const verifyEmail = async (req, res) => {
   }
 };
 
-
-
-
-// LOGOUT
-const logOut = async (req, res) => {
-  res.clearCookie("accessToken");
-  res.clearCookie("refreshToken");
-
-  return res.status(200).json({
-    success: true,
-    message: "Logout successful",
-  });
-};
-
-
-// REFRESH TOKEN
-const refreshToken = async (req, res) => {
-  try {
-    const token = req.cookies.refreshToken;
-
-    if (!token)
-      return res.status(401).json({
-        success: false,
-        message: "Refresh token missing",
-      });
-
-    let decoded;
-    try {
-      decoded = jwt.verify(token, process.env.REFRESH_TOKEN_SECRET);
-    } catch (err) {
-      return res.status(403).json({
-        success: false,
-        message: "Invalid or expired refresh token",
-      });
-    }
-
-    const user = await User.findById(decoded._id);
-    if (!user)
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
-
-    const newAccessToken = user.generateAccessToken();
-    const newRefreshToken = user.generateRefreshToken();
-
-    res.cookie("refreshToken", newRefreshToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "None",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
-
-    return res.status(200).json({
-      success: true,
-      accessToken: newAccessToken,
-    });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: "Failed to refresh token",
-      error: error.message,
-    });
-  }
-};
-
-
 // FORGOT PASSWORD
 const forgotPassword = async (req, res) => {
   try {
@@ -290,7 +251,7 @@ const changePassword = async (req, res) => {
 };
 
 export {
-  registerUserController,
+  register,
   sendEmail,
   verifyEmail,
   loginUser,

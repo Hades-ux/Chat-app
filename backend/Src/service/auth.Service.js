@@ -1,7 +1,9 @@
 import { ApiError  } from "../Utils/apiErrorHandler.js";
 import User from "../Models/User.Model.js";
+import jwt from "jsonwebtoken";
 
-export const registerUserService = async ({ email, password, fullName }) => {
+//for register(sign up) User
+const registerUserService = async ({ email, password, fullName }) => {
   
      // normalize email
     const normalizedEmail = email.toLowerCase().trim();
@@ -25,9 +27,10 @@ export const registerUserService = async ({ email, password, fullName }) => {
 
     return creatUser;
 
-}
+};
 
-export const loginUserService = async({ email, password }) => {
+//for login user
+const loginUserService = async({ email, password }) => {
 
      // normalize email
     const normalizedEmail = email.toLowerCase().trim();
@@ -56,4 +59,38 @@ export const loginUserService = async({ email, password }) => {
         refreshToken,
     }
 
+};
+
+//for refresh token rotation
+const refreshTokenService = async({ token }) => {
+
+    if(!token){
+        throw new ApiError(401, "Refresh token is missing");
     }
+
+    const decoded = jwt.verify(token, process.env.REFRESH_TOKEN_SECRET);
+
+    const user = await User.findById(decoded?._id)
+
+    if(!user){
+        throw new ApiError(401, "User not found");
+    }
+
+    if(token != user.refreshToken){
+        throw new ApiError(403, "Invalid or expired refresh token");
+    }
+
+    const newAccessToken = user.generateAccessToken();
+    const newRefreshToken = user.generateRefreshToken();
+
+    user.refreshToken = newRefreshToken;
+    await user.save({ validateBeforeSave: false });
+
+    return{
+        newAccessToken,
+        newRefreshToken
+    }
+
+};
+
+export { registerUserService, loginUserService, refreshTokenService, }

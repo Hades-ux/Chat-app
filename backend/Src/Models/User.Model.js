@@ -44,9 +44,8 @@ const userSchema = new mongoose.Schema(
       type: String, // for Google OAuth
     },
 
-    refreshTokens: {
+    refreshToken: {
       type: [String],
-      default: [],
       select:false,
     },
   },
