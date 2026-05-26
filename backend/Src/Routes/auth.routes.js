@@ -5,25 +5,26 @@ import {
   loginUser,
   logOut,
   refreshToken,
-  registerUser,
+  registerUserController,
   sendEmail,
   verifyEmail,
 } from "../Controllers/auth.Controller.js";
 import { upload } from "../Middlewares/multer.Middleware.js";
 import { authMiddleware } from "../Middlewares/jwt.Middleware.js";
-import validationMiddleware  from "../Middlewares/validation.Middleware.js";
-import { registerValidation } from "../validation/auth.validation.js";
-import { validate } from "../Middlewares/imageValidater.Middleware.js";
+import { validationMiddleware }  from "../Middlewares/validation.Middleware.js";
+import { registerUserValidation } from "../validation/auth.validation.js";
 
 const router = Router();
 
 // register user
-router.post(
-  "/register",
-  upload.single("avatar"),
-  validate(registerValidation),
-  registerUser
-);
+// router.post(
+//   "/register",
+//   upload.single("avatar"),
+//   validate(registerValidation),
+//   registerUser
+// );
+
+router.post("/register", registerUserValidation ,validationMiddleware, registerUserController);
 
 // send verify email
 router.post("/send-verify-email", authMiddleware, sendEmail)

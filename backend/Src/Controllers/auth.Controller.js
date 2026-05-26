@@ -1,65 +1,36 @@
 import bcrypt from "bcrypt";
 import User from "../Models/User.Model.js";
-import { registerValidation } from "../validation/auth.validation.js";
+import { registerUserValidation } from "../validation/auth.validation.js";
 import { verifyMail } from "../Utils/verifyEmail.js";
 import { fileUpload } from "../Utils/cloudinary.js";
+import { asyncHandler } from "../Utils/asyncHandler.js"
+import { registerUserService } from "../service/auth.Service.js";
+
 import jwt from "jsonwebtoken";
 import "dotenv/config";
 
 // REGISTER
-const registerUser = async (req, res) => {
-  try {
-    const { fullName, email, password } = req.body;
-    const avatar = req.file;
+const registerUserController = asyncHandler(async(req, res) =>{
 
-    const errorMessage = registerValidation({ fullName, email, password });
-    if (errorMessage) {
-      return res.status(400).json({
-        success: false,
-        message: errorMessage,
-      });
+  const { email, fullName, password } = req.body;
+
+  const createUser = await registerUserService ({
+    fullName,
+    email,
+    password,
+  })
+
+  res.status(201).json({
+    success: true,
+    data: {
+      userName: createUser.fullName,
+      email: createUser.email
     }
+  })
 
-    const normalizedEmail = email.toLowerCase();
+}
 
-    const emailTaken = await User.findOne({ email: normalizedEmail });
-    if (emailTaken) {
-      return res.status(409).json({
-        success: false,
-        message: `${emailTaken.email} is already registered`,
-      });
-    }
-
-    // Base user data
-    const userData = {
-      fullName: fullName.toLowerCase(),
-      email: normalizedEmail,
-      password,
-    };
-
-    //Only upload avatar if it exists
-    if (avatar) {
-      const avatarImg = await fileUpload(avatar.path);
-      userData.avatar = {
-        url: avatarImg.url,
-        public_id: avatarImg.public_id,
-      };
-    }
-
-    await User.create(userData);
-
-    return res.status(201).json({
-      success: true,
-      message: `${fullName} user has been created`,
-    });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: "Could not create the user",
-      error: error.message,
-    });
-  }
-};
+)
 
 // send verified email
 const sendEmail = async (req, res) => {
@@ -341,9 +312,8 @@ const changePassword = async (req, res) => {
   }
 };
 
-// EXPORT SECURELY
 export {
-  registerUser,
+  registerUserController,
   sendEmail,
   verifyEmail,
   loginUser,

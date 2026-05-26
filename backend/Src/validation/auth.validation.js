@@ -1,6 +1,6 @@
 import { body } from "express-validator";
 
- export const registerValidation = [
+ export const registerUserValidation = [
     
   body("fullName").trim()
   .notEmpty()
@@ -9,6 +9,7 @@ import { body } from "express-validator";
   .withMessage("Name must be at least 3 charactor"),
 
   body("email")
+  .trim()
   .isEmail()
   .withMessage("Enter valid Email") ,
 

@@ -35,7 +35,7 @@ const Register = () => {
       navigate("/");
     } catch (error) {
       console.log("Axios error: ", error.response);
-      console.log("Axios error: ", error.response.data);
+      console.log("Axios error: data ", error.response.data.errors);
 
       if (
         error.response &&
@@ -43,10 +43,10 @@ const Register = () => {
         error.response?.data?.message
       ) {
         toast.error(
-          "Not able to create account: " + error.response?.data?.message
+          "Not able to create account: " + error.response?.data?.errors
         );
       } else {
-        toast.error("Not able to create account: " + error.message);
+        toast.error("Not able to create account 2: " + error.response?.data?.errors[0]?.msg);
       }
     } finally {
       setLoading(false);
