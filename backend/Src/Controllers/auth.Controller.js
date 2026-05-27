@@ -1,21 +1,24 @@
 import bcrypt from "bcrypt";
 import User from "../Models/User.Model.js";
 import cookieOptions from "../Utils/cookiesOptions.js";
+import asyncHandler from "../Utils/asyncHandler.js";
 import { registerUserValidation } from "../validation/auth.validation.js";
-import { verifyMail } from "../Utils/verifyEmail.js";
-import { fileUpload } from "../Utils/cloudinary.js";
-import { asyncHandler } from "../Utils/asyncHandler.js"
-import { loginUserService, refreshTokenService, registerUserService } from "../service/auth.Service.js";
+import {
+  forgotPasswordService,
+  loginUserService,
+  refreshTokenService,
+  registerUserService,
+  sendVerifyEmailService,
+} from "../service/auth.Service.js";
 
 import jwt from "jsonwebtoken";
 import "dotenv/config";
 
 // REGISTER
-const register = asyncHandler(async(req, res) =>{
-
+const register = asyncHandler(async (req, res) => {
   const { email, fullName, password } = req.body;
 
-  const createUser = await registerUserService ({
+  const createUser = await registerUserService({
     fullName,
     email,
     password,
@@ -26,22 +29,22 @@ const register = asyncHandler(async(req, res) =>{
     message: "User has been created",
     data: {
       userName: createUser.fullName,
-      email: createUser.email
-    }
+      email: createUser.email,
+    },
   });
-
-}
-
-)
+});
 
 // LOGIN
-const login = asyncHandler( async (req, res) => {
+const logIn = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
- const { user, accessToken, refreshToken } = await loginUserService({ email, password });
-    
-      res.cookie("accessToken", accessToken, cookieOptions);
-      res.cookie("refreshToken", refreshToken, cookieOptions);
+  const { user, accessToken, refreshToken } = await loginUserService({
+    email,
+    password,
+  });
+
+  res.cookie("accessToken", accessToken, cookieOptions);
+  res.cookie("refreshToken", refreshToken, cookieOptions);
 
   res.status(200).json({
     success: true,
@@ -54,11 +57,10 @@ const login = asyncHandler( async (req, res) => {
       createdAt: user.createdAt,
     },
   });
-}
-)
+});
 
 // LOGOUT
-const logOut = async (req, res) => {
+const logOut = asyncHandler(async (req, res) => {
   res.clearCookie("accessToken");
   res.clearCookie("refreshToken");
 
@@ -66,81 +68,38 @@ const logOut = async (req, res) => {
     success: true,
     message: "Logout successful",
   });
-};
+});
 
 // REFRESH TOKEN
-const refreshToken = async (req, res) => {
+const refreshToken = asyncHandler(async (req, res) => {
+  const token = req.cookie.refreshToken;
 
-  const token = req.cookie.refreshToken
-  
-  const { accessToken, refreshToken } = await refreshTokenService(token)
+  const { accessToken, refreshToken } = await refreshTokenService(token);
 
-  res.cookie("Access Token",  accessToken, cookieOptions);
+  res.cookie("Access Token", accessToken, cookieOptions);
   res.cookie("Refresh Token", refreshToken, cookieOptions);
 
   res.status(200).json({
     success: true,
-    message: "Token is updated"
-  })
-
-};
+    message: "Token is updated",
+  });
+});
 
 // send verified email
-const sendEmail = async (req, res) => {
-  try {
-    const userId = req.user._id;
+const sendVerificationEmail = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+  const userId = req.user._id;
 
-    if (!userId) {
-      return res.status(400).json({
-        success: false,
-        message: "User not found",
-      });
-    }
+  await sendVerifyEmailService({ email, userId });
 
-    const user = await User.findById(userId);
-
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
-    }
-
-    if (user.isVerified) {
-      return res.status(400).json({
-        success: false,
-        message: "Email already verified",
-      });
-    }
-
-    // Create verification token
-    const token = jwt.sign(
-      { userId: user._id, email: user.email },
-      process.env.EMAIL_SECRET,
-      { expiresIn: "15min" }
-    );
-
-    console.log(token);
-
-    const verifyLink = `${process.env.TEST}/verifylink?userToken=${token}`;
-
-    await verifyMail(verifyLink, user.email);
-
-    return res.status(200).json({
-      success: true,
-      message: "Verification email sent successfully",
-    });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: "Failed to send verification email",
-      error: error.message,
-    });
-  }
-};
+  res.status(200).json({
+    success: true,
+    message: `Verification link sent to ${email}`,
+  });
+});
 
 // verifiy Email
-const verifyEmail = async (req, res) => {
+const verifyEmail = asyncHandler(async (req, res) => {
   try {
     const { userToken } = req.query;
 
@@ -185,78 +144,40 @@ const verifyEmail = async (req, res) => {
       message: "Invalid or expired verification token",
     });
   }
-};
+});
 
 // FORGOT PASSWORD
-const forgotPassword = async (req, res) => {
-  try {
-    const { email, newPassword } = req.body;
-    if (!email || !newPassword)
-      return res
-        .status(400)
-        .json({ success: false, message: "Email and new password required" });
+const forgotPassword = asyncHandler(async (req, res) => {
+  const { email, newPassword } = req.body;
 
-    const user = await User.findOne({ email });
-    if (!user)
-      return res
-        .status(404)
-        .json({ success: false, message: "User not found" });
+  await forgotPasswordService({email, newPassword});
 
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-    user.password = hashedPassword;
-    await user.save({ validateBeforeSave: false });
-
-    return res
-      .status(200)
-      .json({ success: true, message: "Password updated successfully" });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: "Failed to update password",
-      error: error.message,
-    });
-  }
-};
+  res.status(200).json({
+    success: true,
+    message: "Password updated successfully",
+  });
+});
 
 // CHANGE PASSWORD (Authenticated user)
-const changePassword = async (req, res) => {
-  try {
-    const { oldPassword, newPassword } = req.body;
-    const user = await User.findById(req.user._id);
-    if (!user)
-      return res
-        .status(404)
-        .json({ success: false, message: "User not found" });
+const changePassword = asyncHandler(async (req, res) => {
+  const { oldPassword, newPassword } = req.body;
+  const userId = req.user._id;
 
-    const isMatch = await user.isPasswordCorrect(oldPassword);
-    if (!isMatch)
-      return res
-        .status(400)
-        .json({ success: false, message: "Old password incorrect" });
+  await forgotPasswordService({ newPassword, oldPassword, userId });
 
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-    user.password = hashedPassword;
-    await user.save({ validateBeforeSave: false });
-
-    return res
-      .status(200)
-      .json({ success: true, message: "Password changed successfully" });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: "Failed to change password",
-      error: error.message,
-    });
-  }
-};
+  res.status(200).json({
+    success: true,
+    message: "Password changed successfully",
+  });
+});
 
 export {
   register,
-  sendEmail,
-  verifyEmail,
-  loginUser,
+  logIn,
   logOut,
+  refreshToken,
+  sendVerificationEmail,
+  verifyEmail,
   forgotPassword,
   changePassword,
-  refreshToken,
 };

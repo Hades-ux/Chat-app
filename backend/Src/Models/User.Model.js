@@ -1,6 +1,8 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
+import crypto from "crypto";
+import { type } from "os";
 
 const userSchema = new mongoose.Schema(
   {
@@ -33,7 +35,6 @@ const userSchema = new mongoose.Schema(
       lowercase: true,
       trim: true,
       match: [/^\S+@\S+\.\S+$/, "Invalid email"],
-
     },
 
     isVerified: {
@@ -54,6 +55,18 @@ const userSchema = new mongoose.Schema(
       type: String,
       select: false,
     },
+
+    verifyToken: {
+      type: String,
+      select: false,
+      default: undefined,
+    },
+
+    verifyTokenExpiry: {
+      type: Date,
+      select: false,
+      default: undefined,
+    },
   },
   { timestamps: true }
 );
@@ -63,7 +76,7 @@ userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
   try {
     // password hashing
-    this.password = await bcrypt.hash(this.password, 10);
+    this.password = await bcrypt.hash(this.password, process.env.BCRYPT_ROUNDS);
     next();
   } catch (error) {
     next(error);
@@ -108,11 +121,15 @@ userSchema.methods.updateLastActive = function () {
   });
 };
 
-// Refresh token (hashing later)
+// Refresh token
 userSchema.methods.setRefreshToken = function (newRefreshToken) {
-    return this.updateOne({
-    refreshToken: newRefreshToken,
-  });
+  const hashedToken = crypto
+    .createHash("sha256")
+    .update(newRefreshToken)
+    .digest("hex");
+
+  this.refreshToken = hashedToken;
+  return this.save();
 };
 
 export default mongoose.model("User", userSchema);

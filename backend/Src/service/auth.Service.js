@@ -1,7 +1,9 @@
-import { ApiError } from "../Utils/apiErrorHandler.js";
+import ApiError  from "../Utils/apiErrorHandler.js";
 import User from "../Models/User.Model.js";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
+import generateToken from "../Utils/genrateToken.js";
+import sendEmail from "../Utils/sendEmail.js";
 
 //for register(sign up) User
 const registerUserService = async ({ email, password, fullName }) => {
@@ -91,24 +93,22 @@ const refreshTokenService = async ({ token }) => {
 };
 
 // for forgot password
-const forgotPasswordService = async ({}) => {};
-
-// for changePassword
-const changePasswordService = async ({ oldPassword, newPassword, user }) => {
-  if (!user) {
-    throw new ApiError(404, "User not found");
+const forgotPasswordService = async ({ newPassword, user }) => {
+  if (!newPassword) {
+    throw new ApiError(400, "New password is required");
   }
 
-  const isMatch = await user.isPasswordCorrect(oldPassword);
-
-  if (!isMatch) {
-    throw new ApiError(400, "Old password is incorrect");
+  if (!user) {
+    throw new ApiError(404, "User not found");
   }
 
   const isSamePassword = await user.isPasswordCorrect(newPassword);
 
   if (isSamePassword) {
-    throw new ApiError(400, "New password must be different from old password");
+    throw new ApiError(
+      400,
+      "New password must be different from current password"
+    );
   }
 
   user.password = newPassword;
@@ -117,11 +117,68 @@ const changePasswordService = async ({ oldPassword, newPassword, user }) => {
   return true;
 };
 
-//for sendingVerifyEmail
-const sendingVerifyEmailService = async ({}) => {};
+// for changePassword
+const changePasswordService = async ({ oldPassword, newPassword, userId }) => {
+ if (!userId) {
+    throw new ApiError(404, "User data is missing");
+  }
 
-//for verfyEmail
-const verfyEmailService = async ({}) => {};
+  const currentUser = await User.findById(userId);
+
+  const isMatch = await currentUser.isPasswordCorrect(oldPassword);
+
+  if (!isMatch) {
+    throw new ApiError(400, "Old password is incorrect");
+  }
+
+  const isSamePassword = await currentUser.isPasswordCorrect(newPassword);
+
+  if (isSamePassword) {
+    throw new ApiError(400, "New password must be different from old password");
+  }
+
+  currentUser.password = newPassword;
+  await currentUser.save();
+
+  return true;
+};
+
+//for sendingVerifyEmail
+const sendingVerifyEmailService = async ({ email, userId }) => {
+  if (!email) {
+    throw new ApiError(400, "Email is required");
+  }
+
+  if (!userId) {
+    throw new ApiError(404, "User data is missing");
+  }
+
+  const currentUser = await User.findById(userId);
+
+  if (!currentUser) {
+    throw new ApiError(404, "User not found");
+  }
+
+  const token = generateToken();
+
+  currentUser.verifyToken = token.hashedToken;
+  currentUser.verifyTokenExpiry = Date.now() + 10 * 60 * 1000;
+
+  await currentUser.save({ validateBeforeSave: false });
+
+  try {
+    await sendEmail(token.rawToken, email);
+    return true;
+  } catch {
+    currentUser.verifyToken = undefined;
+    currentUser.verifyTokenExpiry = undefined;
+    await currentUser.save({ validateBeforeSave: false });
+    return false;
+  }
+};
+
+//for verifyEmail
+const verifyEmailService = async ({}) => {};
 
 export {
   registerUserService,
