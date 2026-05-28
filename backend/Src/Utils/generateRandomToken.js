@@ -1,5 +1,5 @@
 import crypto from "crypto";
-const generateToken = () => {
+const generateRandomToken = () => {
   const rawToken = crypto.randomBytes(64).toString("hex");
 
   const hashedToken = crypto
@@ -12,4 +12,4 @@ const generateToken = () => {
     hashedToken,
   };
 };
-export default generateToken;
+export default generateRandomToken;

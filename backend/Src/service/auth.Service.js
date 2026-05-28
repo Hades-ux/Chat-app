@@ -1,9 +1,10 @@
-import ApiError  from "../Utils/apiErrorHandler.js";
+import ApiError from "../Utils/apiErrorHandler.js";
 import User from "../Models/User.Model.js";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
-import generateToken from "../Utils/genrateToken.js";
+import generateRandomToken from "../Utils/generateRandomToken.js";
 import sendEmail from "../Utils/sendEmail.js";
+import crypto from "crypto";
 
 //for register(sign up) User
 const registerUserService = async ({ email, password, fullName }) => {
@@ -92,8 +93,12 @@ const refreshTokenService = async ({ token }) => {
   };
 };
 
+// for sending forgot password email
+const sendForgotPasswordEmailService = async({ email }) =>{
+}
+
 // for forgot password
-const forgotPasswordService = async ({ newPassword, user }) => {
+const forgotPasswordService = async ({ password, samePassword, token }) => {
   if (!newPassword) {
     throw new ApiError(400, "New password is required");
   }
@@ -119,7 +124,7 @@ const forgotPasswordService = async ({ newPassword, user }) => {
 
 // for changePassword
 const changePasswordService = async ({ oldPassword, newPassword, userId }) => {
- if (!userId) {
+  if (!userId) {
     throw new ApiError(404, "User data is missing");
   }
 
@@ -144,7 +149,7 @@ const changePasswordService = async ({ oldPassword, newPassword, userId }) => {
 };
 
 //for sendingVerifyEmail
-const sendingVerifyEmailService = async ({ email, userId }) => {
+const sendVerifyEmailService = async ({ email, userId }) => {
   if (!email) {
     throw new ApiError(400, "Email is required");
   }
@@ -159,7 +164,11 @@ const sendingVerifyEmailService = async ({ email, userId }) => {
     throw new ApiError(404, "User not found");
   }
 
-  const token = generateToken();
+  if (currentUser.isVerified) {
+    throw new ApiError(400, "User already verified");
+  }
+
+  const token = generateRandomToken();
 
   currentUser.verifyToken = token.hashedToken;
   currentUser.verifyTokenExpiry = Date.now() + 10 * 60 * 1000;
@@ -178,14 +187,44 @@ const sendingVerifyEmailService = async ({ email, userId }) => {
 };
 
 //for verifyEmail
-const verifyEmailService = async ({}) => {};
+const verifyUserService = async ({ token }) => {
+  if (!token) {
+    throw new ApiError(404, "Data is missing");
+  }
+
+  const incommingHashedToken = crypto
+    .createHash("sha256")
+    .update(token)
+    .digest("hex");
+
+  const currentUser = await User.findOne({
+    verifyToken: incommingHashedToken,
+    verifyTokenExpiry: { $gt: Date.now() },
+  });
+
+  if (!currentUser) {
+    throw new ApiError(400, "Invalid or expired token");
+  }
+
+  if (currentUser.isVerified) {
+    throw new ApiError(400, "User is already verified");
+  }
+
+  currentUser.isVerified = true;
+  currentUser.verifyToken = undefined;
+  currentUser.verifyTokenExpiry = undefined;
+  await currentUser.save({ validateBeforeSave: false });
+
+  return true;
+};
 
 export {
   registerUserService,
   loginUserService,
   refreshTokenService,
+  sendForgotPasswordEmailService,
   forgotPasswordService,
   changePasswordService,
-  sendingVerifyEmailService,
-  verfyEmailService,
+  sendVerifyEmailService,
+  verifyUserService,
 };
