@@ -2,7 +2,6 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 import crypto from "crypto";
-import { type } from "os";
 
 const userSchema = new mongoose.Schema(
   {
@@ -56,13 +55,25 @@ const userSchema = new mongoose.Schema(
       select: false,
     },
 
-    verifyToken: {
+    emailVerifyToken: {
       type: String,
       select: false,
       default: undefined,
     },
 
-    verifyTokenExpiry: {
+    emailVerifyTokenExpiry: {
+      type: Date,
+      select: false,
+      default: undefined,
+    },
+
+    forgotPasswordVerifyTokrn: {
+      type: String,
+      select: false,
+      default: undefined,
+    },
+
+     forgotPasswordVerifyTokenExpiry: {
       type: Date,
       select: false,
       default: undefined,

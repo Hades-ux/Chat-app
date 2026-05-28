@@ -30,7 +30,7 @@ router.post("/register", registerUserValidation ,validationMiddleware, registerU
 router.post("/send-verify-email", authMiddleware, sendEmail)
 
 // verify email link
-router.get(`/verify-email`,verifyEmail )
+router.get(`/verify-email/:token`,verifyEmail )
 
 // Login user
 router.post("/login", loginUser);
@@ -38,8 +38,10 @@ router.post("/login", loginUser);
 // Logout user
 router.post("/logout", authMiddleware, logOut);
 
+// send forgot password link
+
 // Forgot password
-router.patch("/forgot-password", forgotPassword);
+router.patch("/forgot-password/:token", forgotPassword);
 
 // Change password
 router.patch("/change-password", authMiddleware, changePassword);

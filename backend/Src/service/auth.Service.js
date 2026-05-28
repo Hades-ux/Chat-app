@@ -5,6 +5,7 @@ import bcrypt from "bcrypt";
 import generateRandomToken from "../Utils/generateRandomToken.js";
 import sendEmail from "../Utils/sendEmail.js";
 import crypto from "crypto";
+import verifyUser from "../template/emails/verifyUser.js";
 
 //for register(sign up) User
 const registerUserService = async ({ email, password, fullName }) => {
@@ -176,13 +177,15 @@ const sendVerifyEmailService = async ({ email, userId }) => {
   await currentUser.save({ validateBeforeSave: false });
 
   try {
-    await sendEmail(token.rawToken, email);
+    await sendEmail( email, verifyUser(token.rawToken));
+    currentUser.emailVerifyToken = undefined;
+    currentUser.emailVerifyTokenExpiry = undefined;
     return true;
   } catch {
-    currentUser.verifyToken = undefined;
-    currentUser.verifyTokenExpiry = undefined;
+    currentUser.emailVerifyToken = undefined;
+    currentUser.emailVerifyTokenExpiry = undefined;
     await currentUser.save({ validateBeforeSave: false });
-    return false;
+    throw new ApiError(500, "Failed to send verification email");
   }
 };
 

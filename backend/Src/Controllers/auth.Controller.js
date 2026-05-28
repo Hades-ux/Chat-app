@@ -68,7 +68,7 @@ const logOut = asyncHandler(async (req, res) => {
 
 // REFRESH TOKEN
 const refreshToken = asyncHandler(async (req, res) => {
-  const token = req.cookies.refreshToken;
+  const refreshToken = req.cookies.refreshToken;
 
   const { accessToken, refreshToken } = await refreshTokenService(token);
 
@@ -133,10 +133,15 @@ const forgotPassword = asyncHandler(async (req, res) => {
 
 // CHANGE PASSWORD (Authenticated user)
 const changePassword = asyncHandler(async (req, res) => {
-  const { oldPassword, newPassword } = req.body;
+  const { oldPassword, newPassword, confirmNewPassword } = req.body;
   const userId = req.user._id;
 
-  await forgotPasswordService({ newPassword, oldPassword, userId });
+  await forgotPasswordService({
+    newPassword,
+    oldPassword,
+    confirmNewPassword,
+    userId,
+  });
 
   return res.status(200).json({
     success: true,
