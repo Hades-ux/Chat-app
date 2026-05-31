@@ -34,7 +34,7 @@ const register = asyncHandler(async (req, res) => {
 const logIn = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
-  const { user, accessToken, refreshToken } = await loginUserService({
+  const {     safeUser, accessToken, refreshToken } = await loginUserService({
     email,
     password,
   });
@@ -46,11 +46,11 @@ const logIn = asyncHandler(async (req, res) => {
     success: true,
     message: "Login successful",
     data: {
-      _id: user._id,
-      fullName: user.fullName,
-      email: user.email,
-      avatar: user.avatar,
-      createdAt: user.createdAt,
+      id: safeUser._id,
+      fullName: safeUser.fullName,
+      email: safeUser.email,
+      avatar: safeUser.avatar,
+      createdAt: safeUser.createdAt,
     },
   });
 });
@@ -70,10 +70,10 @@ const logOut = asyncHandler(async (req, res) => {
 const refreshToken = asyncHandler(async (req, res) => {
   const refreshToken = req.cookies.refreshToken;
 
-  const { accessToken, refreshToken } = await refreshTokenService(token);
+  const { newAccessToken, newRefreshToken } = await refreshTokenService(refreshToken);
 
-  res.cookie("accessToken", accessToken, cookieOptions);
-  res.cookie("refreshToken", refreshToken, cookieOptions);
+  res.cookie("accessToken", newAccessToken, cookieOptions);
+  res.cookie("refreshToken", newRefreshToken, cookieOptions);
 
   return res.status(200).json({
     success: true,

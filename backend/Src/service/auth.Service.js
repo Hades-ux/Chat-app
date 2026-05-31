@@ -54,6 +54,9 @@ const loginUserService = async ({ email, password }) => {
   const accessToken = user.generateAccessToken();
   const refreshToken = user.generateRefreshToken();
 
+  user.refreshToken = refreshToken;
+  user.save();
+
   const safeUser = user.toObject();
   delete safeUser.password;
 
@@ -95,8 +98,7 @@ const refreshTokenService = async ({ token }) => {
 };
 
 // for sending forgot password email
-const sendForgotPasswordEmailService = async({ email }) =>{
-}
+const sendForgotPasswordEmailService = async ({ email }) => {};
 
 // for forgot password
 const forgotPasswordService = async ({ password, samePassword, token }) => {
@@ -177,7 +179,7 @@ const sendVerifyEmailService = async ({ email, userId }) => {
   await currentUser.save({ validateBeforeSave: false });
 
   try {
-    await sendEmail( email, verifyUser(token.rawToken));
+    await sendEmail(email, verifyUser(token.rawToken));
     currentUser.emailVerifyToken = undefined;
     currentUser.emailVerifyTokenExpiry = undefined;
     return true;

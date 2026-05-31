@@ -1,4 +1,4 @@
-import createEmail from "../../Utils/createEmail";
+import createEmail from "../../Utils/createEmail.js";
 
 const verifyUser = (token) => {
   const link = `${process.env.CLIENT}/verify-email/${token}`;

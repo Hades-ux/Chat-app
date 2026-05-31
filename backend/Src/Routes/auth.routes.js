@@ -4,13 +4,13 @@ import { validationMiddleware } from "../Middlewares/validation.Middleware.js";
 import {
   changePassword,
   forgotPassword,
-  loginUser,
+  logIn,
   logOut,
   refreshToken,
-  registerUserController,
+  register,
   sendForgotPasswordEmail,
   sendVerificationEmail,
-  verifyEmail,
+  verifyUser,
 } from "../Controllers/auth.Controller.js";
 import {
   changePasswordValidation,
@@ -28,7 +28,7 @@ router.post(
   "/register",
   registerUserValidation,
   validationMiddleware,
-  registerUserController
+  register
 );
 
 // send verify email
@@ -45,11 +45,11 @@ router.get(
   "/verify-email/:token",
   verifyUserValidation,
   validationMiddleware,
-  verifyEmail
+  verifyUser
 );
 
 // Login user
-router.post("/login", loginUserValidation, validationMiddleware, loginUser);
+router.post("/login", loginUserValidation, validationMiddleware, logIn);
 
 // Logout user
 router.post("/logout", authMiddleware, logOut);
