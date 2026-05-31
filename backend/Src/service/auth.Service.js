@@ -6,6 +6,7 @@ import generateRandomToken from "../Utils/generateRandomToken.js";
 import sendEmail from "../Utils/sendEmail.js";
 import crypto from "crypto";
 import verifyUser from "../template/emails/verifyUser.js";
+import { error } from "console";
 
 //for register(sign up) User
 const registerUserService = async ({ email, password, fullName }) => {
@@ -54,7 +55,7 @@ const loginUserService = async ({ email, password }) => {
   const accessToken = user.generateAccessToken();
   const refreshToken = user.generateRefreshToken();
 
-  user.refreshToken = refreshToken;
+  await user.setRefreshToken({ token: refreshToken });
   user.save();
 
   const safeUser = user.toObject();
@@ -65,6 +66,24 @@ const loginUserService = async ({ email, password }) => {
     accessToken,
     refreshToken,
   };
+};
+
+// for log out
+const LogoutUserService = async ({ userId }) => {
+  if (!userId) {
+    throw new ApiError(404, "User data is missing");
+  }
+
+  const currentUser = await User.findById(userId);
+
+  if (!currentUser) {
+    throw new ApiError(404, "User not found");
+  }
+
+  currentUser.refreshToken = null;
+  await currentUser.save({ validateBeforeSave: false });
+
+  return true;
 };
 
 //for refresh token rotation
@@ -88,7 +107,7 @@ const refreshTokenService = async ({ token }) => {
   const newAccessToken = user.generateAccessToken();
   const newRefreshToken = user.generateRefreshToken();
 
-  user.refreshToken = newRefreshToken;
+  await user.setRefreshToken({ token: refreshToken });
   await user.save({ validateBeforeSave: false });
 
   return {
@@ -98,7 +117,32 @@ const refreshTokenService = async ({ token }) => {
 };
 
 // for sending forgot password email
-const sendForgotPasswordEmailService = async ({ email }) => {};
+const sendForgotPasswordEmailService = async ({ email }) => {
+  if (!email) {
+    throw new ApiError(404, "Email not found");
+  }
+
+  const currentUser = await User.findOne({ email: email });
+
+  if (!currentUser) {
+    throw new ApiError(404, "User not found");
+  }
+
+  const token = generateRandomToken();
+
+  currentUser.forgotPasswordVerifyToken = token.hashedToken;
+  currentUser.forgotPasswordVerifyTokenExpiry = Date.now() + 10 * 60 * 1000;
+  await currentUser.save({ validateBeforeSave: false });
+
+  try {
+    await sendEmail(email, verifyUser(token.rawToken));
+    return true;
+  } catch (error) {
+    console.log("error" + error);
+    await currentUser.save({ validateBeforeSave: false });
+    throw new ApiError(500, "Failed to send verification email");
+  }
+};
 
 // for forgot password
 const forgotPasswordService = async ({ password, samePassword, token }) => {
@@ -132,6 +176,10 @@ const changePasswordService = async ({ oldPassword, newPassword, userId }) => {
   }
 
   const currentUser = await User.findById(userId);
+
+  if (!currentUser) {
+    throw new ApiError(404, "User not found");
+  }
 
   const isMatch = await currentUser.isPasswordCorrect(oldPassword);
 
@@ -173,19 +221,15 @@ const sendVerifyEmailService = async ({ email, userId }) => {
 
   const token = generateRandomToken();
 
-  currentUser.verifyToken = token.hashedToken;
-  currentUser.verifyTokenExpiry = Date.now() + 10 * 60 * 1000;
+  currentUser.emailVerifyToken = token.hashedToken;
+  currentUser.emailVerifyTokenExpiry = Date.now() + 10 * 60 * 1000;
 
   await currentUser.save({ validateBeforeSave: false });
-
   try {
     await sendEmail(email, verifyUser(token.rawToken));
-    currentUser.emailVerifyToken = undefined;
-    currentUser.emailVerifyTokenExpiry = undefined;
     return true;
-  } catch {
-    currentUser.emailVerifyToken = undefined;
-    currentUser.emailVerifyTokenExpiry = undefined;
+  } catch (error) {
+    console.log("error" + error);
     await currentUser.save({ validateBeforeSave: false });
     throw new ApiError(500, "Failed to send verification email");
   }
@@ -226,6 +270,7 @@ const verifyUserService = async ({ token }) => {
 export {
   registerUserService,
   loginUserService,
+  LogoutUserService,
   refreshTokenService,
   sendForgotPasswordEmailService,
   forgotPasswordService,

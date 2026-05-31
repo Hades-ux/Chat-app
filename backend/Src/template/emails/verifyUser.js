@@ -3,7 +3,7 @@ import createEmail from "../../Utils/createEmail.js";
 const verifyUser = (token) => {
   const link = `${process.env.CLIENT}/verify-email/${token}`;
 
-  return creatEmail({
+  return createEmail({
     subject: "user verfication link from chat app",
     title: "Account verification",
     message: "Click the link below to verify your account",

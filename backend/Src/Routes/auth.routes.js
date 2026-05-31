@@ -18,12 +18,12 @@ import {
   loginUserValidation,
   registerUserValidation,
   sendForgotPasswordEmailValidation,
-  sendVerificationEmailValidation,
   verifyUserValidation,
 } from "../validation/auth.validation.js";
 
 const router = Router();
 
+//register user
 router.post(
   "/register",
   registerUserValidation,
@@ -31,16 +31,15 @@ router.post(
   register
 );
 
-// send verify email
+// send verify email link
 router.post(
   "/send-verify-email",
   authMiddleware,
-  sendVerificationEmailValidation,
   validationMiddleware,
   sendVerificationEmail
 );
 
-// verify email link
+// verify email
 router.get(
   "/verify-email/:token",
   verifyUserValidation,

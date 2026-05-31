@@ -3,6 +3,7 @@ import cookieOptions from "../Utils/cookiesOptions.js";
 import {
   forgotPasswordService,
   loginUserService,
+  LogoutUserService,
   refreshTokenService,
   registerUserService,
   sendForgotPasswordEmailService,
@@ -34,7 +35,7 @@ const register = asyncHandler(async (req, res) => {
 const logIn = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
-  const {     safeUser, accessToken, refreshToken } = await loginUserService({
+  const { safeUser, accessToken, refreshToken } = await loginUserService({
     email,
     password,
   });
@@ -49,7 +50,7 @@ const logIn = asyncHandler(async (req, res) => {
       id: safeUser._id,
       fullName: safeUser.fullName,
       email: safeUser.email,
-      avatar: safeUser.avatar,
+      avatar: safeUser.avatar.url,
       createdAt: safeUser.createdAt,
     },
   });
@@ -57,6 +58,9 @@ const logIn = asyncHandler(async (req, res) => {
 
 // LOGOUT
 const logOut = asyncHandler(async (req, res) => {
+  const userId = req.user;
+  await LogoutUserService({ userId });
+  
   res.clearCookie("accessToken", cookieOptions);
   res.clearCookie("refreshToken", cookieOptions);
 
@@ -70,7 +74,8 @@ const logOut = asyncHandler(async (req, res) => {
 const refreshToken = asyncHandler(async (req, res) => {
   const refreshToken = req.cookies.refreshToken;
 
-  const { newAccessToken, newRefreshToken } = await refreshTokenService(refreshToken);
+  const { newAccessToken, newRefreshToken } =
+    await refreshTokenService(refreshToken);
 
   res.cookie("accessToken", newAccessToken, cookieOptions);
   res.cookie("refreshToken", newRefreshToken, cookieOptions);
@@ -110,7 +115,7 @@ const verifyUser = asyncHandler(async (req, res) => {
 const sendForgotPasswordEmail = asyncHandler(async (req, res) => {
   const { email } = req.body;
 
-  await sendFrogotPasswordEmailService({ email });
+  await sendForgotPasswordEmailService({ email });
 
   return res.status(200).json({
     success: true,

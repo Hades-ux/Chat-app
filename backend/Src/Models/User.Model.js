@@ -19,11 +19,8 @@ const userSchema = new mongoose.Schema(
     },
 
     avatar: {
-      type: {
-        url: { type: String },
-        public_id: { type: String },
-      },
-      default: {},
+      url: { type: String, default: null },
+      publicId: { type: String, default: null },
     },
 
     email: {
@@ -58,25 +55,25 @@ const userSchema = new mongoose.Schema(
     emailVerifyToken: {
       type: String,
       select: false,
-      default: undefined,
+      default: null,
     },
 
     emailVerifyTokenExpiry: {
       type: Date,
       select: false,
-      default: undefined,
+      default: null,
     },
 
-    forgotPasswordVerifyTokrn: {
+    forgotPasswordVerifyToken: {
       type: String,
       select: false,
-      default: undefined,
+      default: null,
     },
 
-     forgotPasswordVerifyTokenExpiry: {
+    forgotPasswordVerifyTokenExpiry: {
       type: Date,
       select: false,
-      default: undefined,
+      default: null,
     },
   },
   { timestamps: true }
@@ -104,6 +101,7 @@ userSchema.methods.generateAccessToken = function () {
   return jwt.sign(
     {
       _id: this._id,
+      email:this.email,
     },
     process.env.ACCESS_TOKEN_SECRET,
     {
@@ -133,11 +131,11 @@ userSchema.methods.updateLastActive = function () {
   });
 };
 
-// Refresh token
-userSchema.methods.setRefreshToken = function (newRefreshToken) {
+// Refresh token hashing
+userSchema.methods.setRefreshToken = function ({token}) {
   const hashedToken = crypto
     .createHash("sha256")
-    .update(newRefreshToken)
+    .update(token)
     .digest("hex");
 
   this.refreshToken = hashedToken;

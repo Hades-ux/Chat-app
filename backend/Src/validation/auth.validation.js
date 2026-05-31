@@ -53,17 +53,6 @@ const refreshTokenValidation = [
     .withMessage("Invalid token"),
 ];
 
-const sendVerificationEmailValidation = [
-  body("email")
-    .notEmpty()
-    .withMessage("Field cannot be empty")
-    .trim()
-    .normalizeEmail()
-    .bail()
-    .isEmail()
-    .withMessage("Enter valid email"),
-]
-
 const verifyUserValidation = [
   param("token")
     .notEmpty()
@@ -150,5 +139,4 @@ export {
   sendForgotPasswordEmailValidation,
   forgotPasswordValidation,
   changePasswordValidation,
-  sendVerificationEmailValidation,
 };

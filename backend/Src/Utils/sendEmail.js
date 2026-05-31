@@ -1,6 +1,6 @@
 import transporter from "./emailTransporter.js"
 
-const sendEmail = async ( email, data) => {
+const sendEmail = async ( email, ...data) => {
   try {
     const mailOptions = {
       from: `"Chat App" <${process.env.EMAIL}>`,
