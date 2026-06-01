@@ -145,16 +145,35 @@ const sendForgotPasswordEmailService = async ({ email }) => {
 };
 
 // for forgot password
-const forgotPasswordService = async ({ password, samePassword, token }) => {
-  if (!newPassword) {
-    throw new ApiError(400, "New password is required");
+const forgotPasswordService = async ({ password, confirmPassword, token }) => {
+  if (!password) {
+    throw new ApiError(400, "password is required");
   }
 
-  if (!user) {
-    throw new ApiError(404, "User not found");
+  if (!confirmPassword) {
+    throw new ApiError(400, "confirmPassword is required");
   }
 
-  const isSamePassword = await user.isPasswordCorrect(newPassword);
+  if (!token) {
+    throw new ApiError(400, "token is missing");
+  }
+
+  if (confirmPassword !== password) {
+    throw new ApiError(400, "Password do not match");
+  }
+
+  const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+
+  const currentUser = await User.findOne({
+    forgotPasswordVerifyToken: hashedToken,
+    forgotPasswordVerifyTokenExpiry: { $gt: Date.now() },
+  });
+
+  if (!currentUser) {
+    throw new ApiError(400, "Invalid or expired token");
+  }
+
+  const isSamePassword = await currentUser.isPasswordCorrect(password);
 
   if (isSamePassword) {
     throw new ApiError(
@@ -163,9 +182,11 @@ const forgotPasswordService = async ({ password, samePassword, token }) => {
     );
   }
 
-  user.password = newPassword;
-  await user.save();
+  currentUser.password = password;
+  currentUser.forgotPasswordVerifyToken = null;
+  currentUser.forgotPasswordVerifyTokenExpiry = null;
 
+  await currentUser.save();
   return true;
 };
 
