@@ -184,8 +184,7 @@ const forgotPasswordService = async ({ password, confirmPassword, token }) => {
   currentUser.password = password;
   currentUser.forgotPasswordVerifyToken = null;
   currentUser.forgotPasswordVerifyTokenExpiry = null;
-
-  await currentUser.save();
+  await currentUser.save({ validateBeforeSave: false });
   return true;
 };
 

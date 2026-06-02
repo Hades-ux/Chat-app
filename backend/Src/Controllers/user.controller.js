@@ -1,55 +1,51 @@
 import User from "../Models/User.Model.js";
-import asynchHandler from "../Utils/asyncHandler.js";
+import asyncHandler from "../Utils/asyncHandler.js";
 import ApiResponse from "../Utils/ApiResponse.js";
 import { fileUpload, deleteUpload } from "../Utils/cloudinary.js";
-import { ownerProfileService } from "../service/user.service.js";
+import {
+  deleteUserService,
+  ownerProfileService,
+  userProfileService,
+} from "../service/user.service.js";
 
 // OWNER PROFILE
-const ownerProfile = asynchHandler(async (req, res) => {
+const ownerProfile = asyncHandler(async (req, res) => {
   const userId = req.user?._id;
 
   const user = await ownerProfileService({ userId });
 
   const profile = {
-      _id: user._id,
-      fullName: user.fullName,
-      avatar : user.avatar?.url,
-      isVerified: user.isVerified,
-      email : user.email,
-      createdAt : user.createdAt.toISOString().split("T")[0]
-    }
+    _id: user._id,
+    fullName: user.fullName,
+    avatar: user.avatar?.url,
+    isVerified: user.isVerified,
+    email: user.email,
+    createdAt: user.createdAt.toISOString().split("T")[0],
+  };
 
-  return res.status(200).json(new ApiResponse("Data fetched", profile))
+  return res.status(200).json(new ApiResponse("Data fetched", profile));
 });
 
 // USER PROFILE
-const userProfile = async (req, res) => {
-  try {
-    const userId = req.params.id;
+const userProfile = asyncHandler(async (req, res) => {
+  const userId = req.params.id;
 
-    const user = await User.findById(userId).select("-password -refreshToken");
+  const user = await userProfileService({ userId });
 
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found.",
-      });
-    }
+  const profile = {
+    _id: user._id,
+    fullName: user.fullName,
+    avatar: user.avatar?.url,
+    isVerified: user.isVerified,
+    email: user.email,
+    createdAt: user.createdAt.toISOString().split("T")[0],
+  };
 
-    return res.status(200).json({
-      success: true,
-      user,
-    });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      error: error.message,
-    });
-  }
-};
+  return res.status(200).json(new ApiResponse("Data fetched", profile));
+});
 
 // UPDATE USERNAME
-const updateUserName = async (req, res) => {
+const updateUserName = asyncHandler(async (req, res) => {
   try {
     const { newUserName } = req.body;
 
@@ -82,10 +78,10 @@ const updateUserName = async (req, res) => {
       error: error.message,
     });
   }
-};
+});
 
 // UPDATE AVATAR
-const UpdateUserAvatar = async (req, res) => {
+const UpdateUserAvatar = asyncHandler(async (req, res) => {
   try {
     const newAvatarPath = req.file?.path;
     if (!newAvatarPath)
@@ -129,10 +125,10 @@ const UpdateUserAvatar = async (req, res) => {
       error: error.message,
     });
   }
-};
+});
 
 // UPDATE EMAIL
-const UpdateUserEmail = async (req, res) => {
+const UpdateUserEmail = asyncHandler(async (req, res) => {
   try {
     const { newUserEmail } = req.body;
 
@@ -164,27 +160,16 @@ const UpdateUserEmail = async (req, res) => {
       error: error.message,
     });
   }
-};
+});
 
 // DELETE USER
-const deleteUser = async (req, res) => {
-  try {
-    const userId = req.user._id;
+const deleteUser = asyncHandler(async (req, res) => {
+  const userId = req.user._id;
 
-    await User.findByIdAndDelete(userId);
+  await deleteUserService({ userId });
 
-    return res.status(200).json({
-      success: true,
-      message: "User deleted successfully",
-    });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: "Internal server error",
-      error: error.message,
-    });
-  }
-};
+  return res.status(200).json(ApiResponse("User deleted successfully"));
+});
 
 export {
   ownerProfile,
