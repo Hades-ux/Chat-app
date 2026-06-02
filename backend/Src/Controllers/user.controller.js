@@ -1,49 +1,33 @@
-import { fileUpload, deleteUpload } from "../Utils/cloudinary.js";
 import User from "../Models/User.Model.js";
+import asynchHandler from "../Utils/asyncHandler.js";
+import ApiResponse from "../Utils/ApiResponse.js";
+import { fileUpload, deleteUpload } from "../Utils/cloudinary.js";
+import { ownerProfileService } from "../service/user.service.js";
 
 // OWNER PROFILE
-const ownerProfile = async (req, res) => {
-  try {
-    const userId = req.user?._id;
-    if (!userId) {
-      return res.status(401).json({
-        success: false,
-        message: "Unauthorized",
-      });
+const ownerProfile = asynchHandler(async (req, res) => {
+  const userId = req.user?._id;
+
+  const user = await ownerProfileService({ userId });
+
+  const profile = {
+      _id: user._id,
+      fullName: user.fullName,
+      avatar : user.avatar?.url,
+      isVerified: user.isVerified,
+      email : user.email,
+      createdAt : user.createdAt.toISOString().split("T")[0]
     }
 
-    //Fetch from DB
-    const user = await User.findById(userId).select("-password -refreshToken");
-
-    if (!user) {
-      return res.status(400).json({
-        success: false,
-        message: "User Not Found.",
-      });
-    }
-
-    return res.status(200).json({
-      success: true,
-      message: "User Found",
-      data: user?._id,
-      user,
-    });
-  } catch (error) {
-    return res.status(401).json({
-      success: false,
-      message: "Not authenticated",
-    });
-  }
-};
+  return res.status(200).json(new ApiResponse("Data fetched", profile))
+});
 
 // USER PROFILE
 const userProfile = async (req, res) => {
   try {
-    const userId = req.params.id; 
+    const userId = req.params.id;
 
-    const user = await User.findById(userId).select(
-      "-password -refreshToken"
-    );
+    const user = await User.findById(userId).select("-password -refreshToken");
 
     if (!user) {
       return res.status(404).json({
@@ -63,7 +47,6 @@ const userProfile = async (req, res) => {
     });
   }
 };
-
 
 // UPDATE USERNAME
 const updateUserName = async (req, res) => {
@@ -125,13 +108,11 @@ const UpdateUserAvatar = async (req, res) => {
         message: "User not found",
       });
 
-
     await User.findByIdAndUpdate(req.user._id, {
       $set: {
         avatar: { url: newAvatar.secure_url, public_id: newAvatar.public_id },
       },
     });
-
 
     return res.status(200).json({
       success: true,
@@ -169,7 +150,7 @@ const UpdateUserEmail = async (req, res) => {
       });
 
     await User.findByIdAndUpdate(req.user._id, {
-      $set: { email: newUserEmail, isVerified:false },
+      $set: { email: newUserEmail, isVerified: false },
     });
 
     return res.status(200).json({

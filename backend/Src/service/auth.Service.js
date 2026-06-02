@@ -1,4 +1,4 @@
-import ApiError from "../Utils/apiErrorHandler.js";
+import ApiError from "../Utils/ApiError.js";
 import User from "../Models/User.Model.js";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
@@ -6,7 +6,6 @@ import generateRandomToken from "../Utils/generateRandomToken.js";
 import sendEmail from "../Utils/sendEmail.js";
 import crypto from "crypto";
 import verifyUser from "../template/emails/verifyUser.js";
-import { error } from "console";
 
 //for register(sign up) User
 const registerUserService = async ({ email, password, fullName }) => {
