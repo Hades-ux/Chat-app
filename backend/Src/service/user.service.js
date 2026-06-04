@@ -64,27 +64,32 @@ const UpdateUserAvatarService = async ({ avatarPath, userId }) => {
   }
 
   const avatar = await fileUpload(avatarPath);
-  if (!avatar) {
-    throw new ApiError(500, "Failed to upload the profile picture");
+  if (!avatar?.secure_url || !avatar?.public_id) {
+    throw new ApiError(502, "Failed to upload the profile picture");
   }
 
-  const currentAvatar = currentUser?.avatar?.publicId;
-  
-  currentUser.avatar.url = avatar.secure_url;
-  currentUser.avatar.publicId = avatar.public_id;
+  const currentAvatarPublicId = currentUser?.avatar?.publicId;
+
+  currentUser.avatar.url = avatar?.secure_url;
+  currentUser.avatar.publicId = avatar?.public_id;
 
   await currentUser.save({ validateBeforeSave: false });
 
-  if (currentAvatar) {
+  if (currentAvatarPublicId) {
     try {
-      await deleteUpload(currentAvatar);
+      await deleteUpload(currentAvatarPublicId);
     } catch (error) {
-      console.log(error);
-      throw new ApiError(500, "Not able to delete current Profile picture");
+      console.error("Failed cleanup of previous avatar", {
+        publicId: currentAvatarPublicId,
+        error: error,
+      });
     }
   }
 
-  return true;
+  return {
+    url: currentUser.avatar.url,
+    publicId: currentUser.avatar.publicId,
+  };
 };
 
 export {
