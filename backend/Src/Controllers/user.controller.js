@@ -5,6 +5,7 @@ import { fileUpload, deleteUpload } from "../Utils/cloudinary.js";
 import {
   deleteUserService,
   ownerProfileService,
+  updateUserAvatarService,
   userProfileService,
 } from "../service/user.service.js";
 
@@ -44,6 +45,33 @@ const userProfile = asyncHandler(async (req, res) => {
   return res.status(200).json(new ApiResponse("Data fetched", profile));
 });
 
+// UPDATE AVATAR
+const UpdateUserAvatar = asyncHandler(async (req, res) => {
+  const newAvatarPath = req.file?.path;
+  const userId = req.user._id;
+
+  const avatar = await updateUserAvatarService({
+    avatarPath: newAvatarPath,
+    userId,
+  });
+
+  return res.status(200).json(
+    new ApiResponse("Profile picture updated successfully.", {
+      url: avatar.url,
+      publicId: avatar.publicId,
+    })
+  );
+});
+
+// DELETE USER
+const deleteUser = asyncHandler(async (req, res) => {
+  const userId = req.user._id;
+
+  await deleteUserService({ userId });
+
+  return res.status(200).json(ApiResponse("User deleted successfully"));
+});
+
 // UPDATE USERNAME
 const updateUserName = asyncHandler(async (req, res) => {
   try {
@@ -75,53 +103,6 @@ const updateUserName = asyncHandler(async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Internal server error",
-      error: error.message,
-    });
-  }
-});
-
-// UPDATE AVATAR
-const UpdateUserAvatar = asyncHandler(async (req, res) => {
-  try {
-    const newAvatarPath = req.file?.path;
-    if (!newAvatarPath)
-      return res.status(400).json({
-        success: false,
-        message: "File not found",
-      });
-
-    const newAvatar = await fileUpload(newAvatarPath);
-    if (!newAvatar)
-      return res.status(400).json({
-        success: false,
-        message: "Error uploading image",
-      });
-
-    const user = await User.findById(req.user._id);
-    if (!user)
-      return res.status(400).json({
-        success: false,
-        message: "User not found",
-      });
-
-    await User.findByIdAndUpdate(req.user._id, {
-      $set: {
-        avatar: { url: newAvatar.secure_url, public_id: newAvatar.public_id },
-      },
-    });
-
-    return res.status(200).json({
-      success: true,
-      message: "Avatar updated successfully",
-      avatar: {
-        url: newAvatar.secure_url,
-        public_id: newAvatar.public_id,
-      },
-    });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: "Internal server Error",
       error: error.message,
     });
   }
@@ -160,15 +141,6 @@ const UpdateUserEmail = asyncHandler(async (req, res) => {
       error: error.message,
     });
   }
-});
-
-// DELETE USER
-const deleteUser = asyncHandler(async (req, res) => {
-  const userId = req.user._id;
-
-  await deleteUserService({ userId });
-
-  return res.status(200).json(ApiResponse("User deleted successfully"));
 });
 
 export {

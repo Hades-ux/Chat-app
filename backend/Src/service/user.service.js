@@ -48,7 +48,7 @@ const deleteUserService = async ({ userId }) => {
 };
 
 // for uploading profile picture
-const UpdateUserAvatarService = async ({ avatarPath, userId }) => {
+const updateUserAvatarService = async ({ avatarPath, userId }) => {
   if (!userId) {
     throw new ApiError(401, "Unauthorized request");
   }
@@ -96,5 +96,5 @@ export {
   ownerProfileService,
   userProfileService,
   deleteUserService,
-  UpdateUserAvatarService,
+  updateUserAvatarService,
 };
