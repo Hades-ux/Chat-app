@@ -33,6 +33,23 @@ const userSchema = new mongoose.Schema(
       match: [/^\S+@\S+\.\S+$/, "Invalid email"],
     },
 
+    pendingEmail: {
+      type: String,
+      default: null,
+    },
+
+    changeEmailToken: {
+      type: String,
+      select: false,
+      default: null,
+    },
+
+    changeEmailTokenExpiry: {
+      type: Date,
+      select: false,
+      default: null,
+    },
+    
     isVerified: {
       type: Boolean,
       default: false,
@@ -41,10 +58,6 @@ const userSchema = new mongoose.Schema(
     lastActive: {
       type: Date,
       default: Date.now,
-    },
-
-    googleId: {
-      type: String, // for Google OAuth
     },
 
     refreshToken: {
@@ -101,7 +114,7 @@ userSchema.methods.generateAccessToken = function () {
   return jwt.sign(
     {
       _id: this._id,
-      email:this.email,
+      email: this.email,
     },
     process.env.ACCESS_TOKEN_SECRET,
     {
@@ -132,11 +145,8 @@ userSchema.methods.updateLastActive = function () {
 };
 
 // Refresh token hashing
-userSchema.methods.setRefreshToken = function ({token}) {
-  const hashedToken = crypto
-    .createHash("sha256")
-    .update(token)
-    .digest("hex");
+userSchema.methods.setRefreshToken = function ({ token }) {
+  const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
 
   this.refreshToken = hashedToken;
   return this.save();

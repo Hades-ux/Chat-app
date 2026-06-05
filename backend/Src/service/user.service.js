@@ -1,5 +1,7 @@
 import ApiError from "../Utils/ApiError.js";
 import User from "../Models/User.Model.js";
+import generateRandomToken from "../Utils/generateRandomToken.js";
+import changeEmail from "../template/emails/changeEmail.js";
 import { deleteUpload, fileUpload } from "../Utils/cloudinary.js";
 
 // for Owner Profile
@@ -92,9 +94,69 @@ const updateUserAvatarService = async ({ avatarPath, userId }) => {
   };
 };
 
+// for send change of email
+const sendChangeEmailService = async ({ email, userId }) => {
+  if (!email) {
+    throw new ApiError(400, "Missing Email");
+  }
+
+  const normalizeEmail = email.toLowerCase().trim();
+
+  if (!userId) {
+    throw new ApiError(401, "Unauthorized request");
+  }
+
+  const currentUser = await User.findById(userId).select(
+    "email pendingEmail changeEmailToken changeEmailTokenExpiry"
+  );
+
+  if (!currentUser) {
+    throw new ApiError(404, "User not found");
+  }
+
+  if (currentUser.email === normalizeEmail) {
+    throw new ApiError(400, "Can not use the same email");
+  }
+
+  if (currentUser.pendingEmail) {
+    throw new ApiError(409, "Already have the change email request");
+  }
+
+  const isMatchEmail = await User.findOne({ email: normalizeEmail }).select(
+    "email"
+  );
+
+  if (isMatchEmail) {
+    throw new ApiError(400, `${email} is already registered`);
+  }
+
+  const token = await generateRandomToken();
+  currentUser.changeEmailToken = token.hashedToken;
+  currentUser.changeEmailTokenExpiry = Date.now() + 10 * 60 * 1000;
+
+  currentUser.pendingEmail = normalizeEmail;
+  await currentUser.save({ validateBeforeSave: false });
+
+  try {
+    await sendEmail(email, changeEmail(token.rawToken));
+    return true;
+  } catch (error) {
+    currentUser.changeEmailToken = null;
+    currentUser.changeEmailTokenExpiry = null;
+    currentUser.pendingEmail = null;
+
+    await currentUser.save({ validateBeforeSave: false });
+
+    console.error("Failed to send change-email verification", error);
+    
+    throw new ApiError(500,"Failed to send change-email verification")
+  }
+};
+
 export {
   ownerProfileService,
   userProfileService,
   deleteUserService,
   updateUserAvatarService,
+  sendChangeEmailService,
 };

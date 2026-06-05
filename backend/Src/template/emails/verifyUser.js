@@ -5,7 +5,7 @@ const verifyUser = (token) => {
 
   return createEmail({
     subject: "user verfication link from chat app",
-    title: "Account verification",
+    title: "Account verification request",
     message: "Click the link below to verify your account",
     buttonText: "verify email",
     link: link,

@@ -5,6 +5,7 @@ import { fileUpload, deleteUpload } from "../Utils/cloudinary.js";
 import {
   deleteUserService,
   ownerProfileService,
+  sendChangeEmailService,
   updateUserAvatarService,
   userProfileService,
 } from "../service/user.service.js";
@@ -143,6 +144,18 @@ const UpdateUserEmail = asyncHandler(async (req, res) => {
   }
 });
 
+// send change email
+const sendChangeEmail = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+  const userId = req.user._id;
+
+  await sendChangeEmailService({ email, userId });
+
+  return res
+    .status(200)
+    .json(new ApiResponse(`Email send successfully to ${email}`));
+});
+
 export {
   ownerProfile,
   userProfile,
@@ -150,4 +163,5 @@ export {
   UpdateUserAvatar,
   UpdateUserEmail,
   deleteUser,
+  sendChangeEmail,
 };
