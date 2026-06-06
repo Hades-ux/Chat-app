@@ -3,6 +3,7 @@ import asyncHandler from "../Utils/asyncHandler.js";
 import ApiResponse from "../Utils/ApiResponse.js";
 import { fileUpload, deleteUpload } from "../Utils/cloudinary.js";
 import {
+  changeEmailService,
   deleteUserService,
   ownerProfileService,
   sendChangeEmailService,
@@ -73,77 +74,6 @@ const deleteUser = asyncHandler(async (req, res) => {
   return res.status(200).json(ApiResponse("User deleted successfully"));
 });
 
-// UPDATE USERNAME
-const updateUserName = asyncHandler(async (req, res) => {
-  try {
-    const { newUserName } = req.body;
-
-    if (!newUserName)
-      return res.status(400).json({
-        success: false,
-        message: "User Name field cannot be empty",
-      });
-
-    const existingUser = await User.findOne({ userName: newUserName });
-    if (existingUser) {
-      return res.status(400).json({
-        success: false,
-        message: "Username already taken",
-      });
-    }
-
-    await User.findByIdAndUpdate(req.user._id, {
-      $set: { fullName: newUserName },
-    });
-
-    return res.status(200).json({
-      success: true,
-      message: `Username updated successfully to ${newUserName}`,
-    });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: "Internal server error",
-      error: error.message,
-    });
-  }
-});
-
-// UPDATE EMAIL
-const UpdateUserEmail = asyncHandler(async (req, res) => {
-  try {
-    const { newUserEmail } = req.body;
-
-    if (!newUserEmail)
-      return res.status(400).json({
-        success: false,
-        message: "Email field cannot be empty",
-      });
-
-    const existingUser = await User.findOne({ email: newUserEmail });
-    if (existingUser)
-      return res.status(400).json({
-        success: false,
-        message: "Email already in use",
-      });
-
-    await User.findByIdAndUpdate(req.user._id, {
-      $set: { email: newUserEmail, isVerified: false },
-    });
-
-    return res.status(200).json({
-      success: true,
-      message: `Email updated successfully to ${newUserEmail}`,
-    });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: "Internal Server Error",
-      error: error.message,
-    });
-  }
-});
-
 // send change email
 const sendChangeEmail = asyncHandler(async (req, res) => {
   const { email } = req.body;
@@ -155,6 +85,53 @@ const sendChangeEmail = asyncHandler(async (req, res) => {
     .status(200)
     .json(new ApiResponse(`Email send successfully to ${email}`));
 });
+
+// UPDATE EMAIL
+const UpdateUserEmail = asyncHandler(async (req, res) => {
+  const { token } = req.params;
+
+  const response = await changeEmailService({ token });
+
+  return res
+    .status(200)
+    .json(new ApiResponse(`Email updated successfully to ${response.email}`));
+});
+
+// UPDATE USERNAME
+// const updateUserName = asyncHandler(async (req, res) => {
+//   try {
+//     const { newUserName } = req.body;
+
+//     if (!newUserName)
+//       return res.status(400).json({
+//         success: false,
+//         message: "User Name field cannot be empty",
+//       });
+
+//     const existingUser = await User.findOne({ userName: newUserName });
+//     if (existingUser) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Username already taken",
+//       });
+//     }
+
+//     await User.findByIdAndUpdate(req.user._id, {
+//       $set: { fullName: newUserName },
+//     });
+
+//     return res.status(200).json({
+//       success: true,
+//       message: `Username updated successfully to ${newUserName}`,
+//     });
+//   } catch (error) {
+//     return res.status(500).json({
+//       success: false,
+//       message: "Internal server error",
+//       error: error.message,
+//     });
+//   }
+// });
 
 export {
   ownerProfile,

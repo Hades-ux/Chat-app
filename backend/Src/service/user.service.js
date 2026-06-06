@@ -2,6 +2,7 @@ import ApiError from "../Utils/ApiError.js";
 import User from "../Models/User.Model.js";
 import generateRandomToken from "../Utils/generateRandomToken.js";
 import changeEmail from "../template/emails/changeEmail.js";
+import crypto from "crypto";
 import { deleteUpload, fileUpload } from "../Utils/cloudinary.js";
 
 // for Owner Profile
@@ -148,9 +149,46 @@ const sendChangeEmailService = async ({ email, userId }) => {
     await currentUser.save({ validateBeforeSave: false });
 
     console.error("Failed to send change-email verification", error);
-    
-    throw new ApiError(500,"Failed to send change-email verification")
+
+    throw new ApiError(500, "Failed to send change-email verification");
   }
+};
+
+const changeEmailService = async ({ token }) => {
+  if (!token) {
+    throw new ApiError(400, "token is missing");
+  }
+
+  const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+
+  const user = await User.findOne({
+    changeEmailToken: hashedToken,
+    changeEmailTokenExpiry: { $gt: Date.now() },
+  }).select("email pendingEmail changeEmailToken changeEmailTokenExpiry");
+
+  if (!user) {
+    throw new ApiError(400, "Expired or Invalid token");
+  }
+
+  if (!user.pendingEmail) {
+    throw new ApiError(400, "No email to update");
+  }
+
+  const isTaken = await User.findOne({ email: user.pendingEmail });
+
+  if (isTaken) {
+    throw new ApiError(400, "Can not update the email,Email is already taken");
+  }
+
+  user.email = user.pendingEmail;
+  user.pendingEmail = null;
+  user.changeEmailToken = null;
+  user.changeEmailTokenExpiry = null;
+  await user.save();
+
+  return {
+    email: user.email,
+  };
 };
 
 export {
@@ -159,4 +197,5 @@ export {
   deleteUserService,
   updateUserAvatarService,
   sendChangeEmailService,
+  changeEmailService,
 };

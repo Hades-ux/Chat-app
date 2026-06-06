@@ -35,6 +35,10 @@ const userSchema = new mongoose.Schema(
 
     pendingEmail: {
       type: String,
+      unique: true,
+      lowercase: true,
+      trim: true,
+      match: [/^\S+@\S+\.\S+$/, "Invalid email"],
       default: null,
     },
 
@@ -49,7 +53,7 @@ const userSchema = new mongoose.Schema(
       select: false,
       default: null,
     },
-    
+
     isVerified: {
       type: Boolean,
       default: false,
