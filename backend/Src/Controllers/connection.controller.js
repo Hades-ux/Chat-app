@@ -4,7 +4,7 @@ import User from "../Models/User.Model.js";
 // ADD CONNECTION
 const addConnection = async (req, res) => {
   try {
-    const user = req.user?._id;
+    const userId = req.user?._id;
 
     if (!user) {
       return res.status(401).json({
