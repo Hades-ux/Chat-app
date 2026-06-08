@@ -14,7 +14,9 @@ const addConnectionService = async ({ userId, email }) => {
 
   const normalizeEmail = email.trim().toLowerCase();
 
-  const targetUser = await User.findOne({ email: normalizeEmail }).select("_id").lean();
+  const targetUser = await User.findOne({ email: normalizeEmail })
+    .select("_id")
+    .lean();
 
   if (!targetUser) {
     throw new ApiError(404, `User with email: ${email} not found.`);
@@ -38,5 +40,19 @@ const addConnectionService = async ({ userId, email }) => {
 };
 
 // fetching the connection
-const fetchConnectionService = async ({}) => {};
+const fetchConnectionService = async ({ userId }) => {
+  if (!userId) {
+    throw new ApiError(401, "Unauthorized");
+  }
+
+  const response = await Connection.findOne({ owner: userId })
+    .populate("connections", "fullName email avatar")
+    .lean();
+
+  const connections = response?.connections || [];
+
+  return {
+    data: connections,
+  };
+};
 export { addConnectionService, fetchConnectionService };
