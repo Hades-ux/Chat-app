@@ -1,3 +1,23 @@
+## Project Status Notice
+
+🚧 This project is currently undergoing a major code refactoring and architecture improvement phase.
+
+To improve code quality, scalability, maintainability, and overall performance, active feature development and UI updates are temporarily on hold.
+
+During this period, the focus is on:
+
+* Codebase cleanup and restructuring
+* Performance optimization
+* Improving backend architecture
+* Better scalability and maintainability
+* Reducing technical debt
+
+Because of this, new features, updates, and improvements may be delayed for some time.
+
+Thank you for your patience and support while the project is being rebuilt with a stronger foundation.
+
+
+
 📌 Overview
 
 This project is a full-stack real-time chat application designed to simulate the architecture of modern messaging platforms.

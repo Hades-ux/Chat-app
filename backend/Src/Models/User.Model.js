@@ -1,6 +1,7 @@
-import mongoose from "mongoose";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import mongoose from "mongoose";
+import crypto from "crypto";
 
 const userSchema = new mongoose.Schema(
   {
@@ -14,20 +15,43 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
       minlength: 6,
-      select:false,
+      select: false,
     },
 
     avatar: {
-      url: { type: String,},
-      public_id: { type: String,},
+      url: { type: String, default: null },
+      publicId: { type: String, default: null },
     },
 
     email: {
+      index: true,
       type: String,
       required: true,
       unique: true,
       lowercase: true,
       trim: true,
+      match: [/^\S+@\S+\.\S+$/, "Invalid email"],
+    },
+
+    pendingEmail: {
+      type: String,
+      unique: true,
+      lowercase: true,
+      trim: true,
+      match: [/^\S+@\S+\.\S+$/, "Invalid email"],
+      default: null,
+    },
+
+    changeEmailToken: {
+      type: String,
+      select: false,
+      default: null,
+    },
+
+    changeEmailTokenExpiry: {
+      type: Date,
+      select: false,
+      default: null,
     },
 
     isVerified: {
@@ -40,14 +64,33 @@ const userSchema = new mongoose.Schema(
       default: Date.now,
     },
 
-    googleId: {
-      type: String, // for Google OAuth
+    refreshToken: {
+      type: String,
+      select: false,
     },
 
-    refreshTokens: {
-      type: [String],
-      default: [],
-      select:false,
+    emailVerifyToken: {
+      type: String,
+      select: false,
+      default: null,
+    },
+
+    emailVerifyTokenExpiry: {
+      type: Date,
+      select: false,
+      default: null,
+    },
+
+    forgotPasswordVerifyToken: {
+      type: String,
+      select: false,
+      default: null,
+    },
+
+    forgotPasswordVerifyTokenExpiry: {
+      type: Date,
+      select: false,
+      default: null,
     },
   },
   { timestamps: true }
@@ -75,6 +118,7 @@ userSchema.methods.generateAccessToken = function () {
   return jwt.sign(
     {
       _id: this._id,
+      email: this.email,
     },
     process.env.ACCESS_TOKEN_SECRET,
     {
@@ -88,6 +132,7 @@ userSchema.methods.generateRefreshToken = function () {
   return jwt.sign(
     {
       _id: this._id,
+      email: this.email,
     },
     process.env.REFRESH_TOKEN_SECRET,
     {
@@ -98,16 +143,17 @@ userSchema.methods.generateRefreshToken = function () {
 
 // lastActive
 userSchema.methods.updateLastActive = function () {
-  this.lastActive = Date.now();
-  return this.save();
+  return this.updateOne({
+    lastActive: Date.now(),
+  });
 };
 
-// // do it later
-// // Hashing Refresh token
-// userSchema.methods.addRefreshToken = async function (token) {
-//   const hashToken = crypto.createHash("sha256").update(token).digest("hex")
-//   this.refreshTokens.push(hashToken);
-//   await this.save()
-// }
+// Refresh token hashing
+userSchema.methods.setRefreshToken = function ({ token }) {
+  const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+
+  this.refreshToken = hashedToken;
+  return this.save();
+};
 
 export default mongoose.model("User", userSchema);
